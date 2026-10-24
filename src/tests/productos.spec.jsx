@@ -5,10 +5,14 @@ import { getProductos } from '../services/mockStorage';
 
 beforeEach(() => localStorage.clear());
 
-it('shows the fase 1 board photo on the board product', () => {
-    const tabla = getProductos().find((p) => p.id === 'tabla-maple-pro-825');
+it('gives every demo product its own photo instead of the logo', () => {
+    const imagenPorId = Object.fromEntries(getProductos().map((p) => [p.id, p.imagen]));
 
-    expect(tabla.imagen).toBe('/img/tablas.jpg');
+    expect(imagenPorId).toEqual({
+        'tabla-maple-pro-825': '/img/tablas.jpg',
+        'lija-premium-black': '/img/lija.jpg',
+        'polera-oversize-street': '/img/polera.jpg'
+    });
 });
 
 it('updates the placeholder image saved by an earlier visit and keeps its stock', () => {

@@ -15,7 +15,7 @@ const PRODUCTOS_DEMO = [
         categoria: "Hardwares",
         precio: 8900,
         stock: 12,
-        imagen: "/img/logo.jpeg",
+        imagen: "/img/lija.jpg",
         oferta: true
     },
     {
@@ -24,7 +24,7 @@ const PRODUCTOS_DEMO = [
         categoria: "Poleras y Polerones",
         precio: 22000,
         stock: 2,
-        imagen: "/img/logo.jpeg",
+        imagen: "/img/polera.jpg",
         oferta: false
     }
 ];
