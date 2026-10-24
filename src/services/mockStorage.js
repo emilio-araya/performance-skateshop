@@ -46,13 +46,35 @@ const USUARIOS_DEMO = [
 const CATEGORIAS_DEMO = ["Tablas", "Poleras y Polerones", "Hardwares", "Accesorios"];
 
 // --- PRODUCTOS ---
+// Placeholder that earlier versions saved for every demo product.
+const IMAGEN_PLACEHOLDER = "/img/logo.jpeg";
+
+// Browsers that visited before a demo product got its real photo still hold
+// the placeholder. Swap only that placeholder: stock, prices and any image
+// set from the admin panel stay untouched.
+const actualizarImagenesDemo = (productos) => {
+    let cambio = false;
+    const actualizados = productos.map((producto) => {
+        const demo = PRODUCTOS_DEMO.find((d) => d.id === producto.id);
+        if (demo && producto.imagen === IMAGEN_PLACEHOLDER && demo.imagen !== IMAGEN_PLACEHOLDER) {
+            cambio = true;
+            return { ...producto, imagen: demo.imagen };
+        }
+        return producto;
+    });
+    if (cambio) {
+        localStorage.setItem("admin_productos", JSON.stringify(actualizados));
+    }
+    return actualizados;
+};
+
 export const getProductos = () => {
     const data = localStorage.getItem("admin_productos");
     if (!data) {
         localStorage.setItem("admin_productos", JSON.stringify(PRODUCTOS_DEMO));
         return [...PRODUCTOS_DEMO];
     }
-    return JSON.parse(data);
+    return actualizarImagenesDemo(JSON.parse(data));
 };
 
 export const guardarProducto = (producto) => {
