@@ -1,9 +1,32 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
+// Same four articles as fase 1 (js/blogs.js of the original project).
 export const BLOGS_DATA = [
-    { id: 1, titulo: "Guía Definitiva: Cómo elegir tu primera tabla de skate", desc: "Aprende todo sobre maderas, cóncavos y medidas ideales.", img: "/img/Caso1.jpg" },
-    { id: 2, titulo: "Ruedas blandas vs. Ruedas duras", desc: "Conoce la dureza adecuada según la superficie sobre la que patinas.", img: "/img/Caso2.webp" }
+    {
+        id: 1,
+        titulo: "Guía Definitiva: Cómo elegir tu primera tabla de skate (y no morir en el intento)",
+        desc: "Si estás pensando en armar tu primer setup pero te abruman los tecnicismos, esta guía es para ti",
+        img: "/img/Caso1.jpg"
+    },
+    {
+        id: 2,
+        titulo: "Ruedas blandas vs. Ruedas duras: ¿Cuáles necesitas para dominar la ciudad?",
+        desc: "No todas las ruedas se comportan igual sobre el asfalto. Si tu objetivo es recorrer las calles de tu ciudad sin que tus pies terminen vibrando por el pavimento rugoso, necesitas conocer el durómetro de tus ruedas.",
+        img: "/img/Caso2.webp"
+    },
+    {
+        id: 3,
+        titulo: "El Arte sobre la Madera: Los gráficos de skate más icónicos de la historia",
+        desc: "El skateboarding es tanto un deporte como una forma de expresión artística. Desde los míticos diseños de Powell-Peralta y Santa Cruz en los años 80 hasta las colaboraciones modernas de Supreme, repasamos las ilustraciones que definieron a generaciones enteras.",
+        img: "/img/Caso3.jpg"
+    },
+    {
+        id: 4,
+        titulo: "¿Necesitas renovar tu setup?",
+        desc: "En nuestra tienda online contamos con stock permanente de tablas, trucks, ruedas, rulemanes y accesorios de las marcas más respetadas de la escena.",
+        img: "/img/Caso4.webp"
+    }
 ];
 
 const Blogs = () => {

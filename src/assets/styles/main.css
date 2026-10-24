@@ -23,6 +23,18 @@ body {
     line-height: 1.6;
 }
 
+/* index.css comes from the Vite template and paints headings near-black
+   (--text-h). This stylesheet loads after it, so without this rule every
+   heading without its own colour disappears on the dark background. */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    color: var(--text-color);
+}
+
 a {
     color: inherit;
     text-decoration: none;
@@ -518,6 +530,120 @@ header.site-header {
 @media (max-width: 768px) {
     .about-grid, .footer-container {
         grid-template-columns: 1fr;
+    }
+}
+/* --- BLOG: portado de la fase 1 (styles/main.css, sección 6) --- */
+.blog-section {
+    max-width: 1100px;
+    margin: 40px auto;
+    padding: 0 20px;
+    min-height: 70vh;
+}
+
+.blog-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.blog-card {
+    display: flex;
+    background-color: var(--surface-color);
+    border: 1px solid var(--accent-color);
+    padding: 24px;
+    gap: 30px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    align-items: stretch;
+    border-radius: 8px;
+}
+
+.blog-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    text-align: left;
+}
+
+.blog-content h3 {
+    font-size: 1.5rem;
+    color: var(--text-color);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+}
+
+.blog-content p {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+}
+
+.btn-ver-caso {
+    align-self: flex-start;
+    padding: 10px 24px;
+    background-color: transparent;
+    border: 2px solid var(--accent-color);
+    color: var(--text-color);
+    font-weight: bold;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+    border-radius: 4px;
+}
+
+.btn-ver-caso:hover {
+    background-color: var(--accent-color);
+    color: #ffffff;
+}
+
+.blog-image-wrapper {
+    width: 380px;
+    min-height: 200px;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-color);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 6px;
+}
+
+.blog-image-wrapper.placeholder::before,
+.blog-image-wrapper.placeholder::after {
+    content: '';
+    position: absolute;
+    width: 120%;
+    height: 1px;
+    background-color: #333333;
+}
+
+.blog-image-wrapper.placeholder::before {
+    transform: rotate(28deg);
+}
+
+.blog-image-wrapper.placeholder::after {
+    transform: rotate(-28deg);
+}
+
+.blog-image-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: relative;
+    z-index: 1;
+}
+
+@media (max-width: 768px) {
+    .blog-card {
+        flex-direction: column-reverse;
+        gap: 20px;
+    }
+
+    .blog-image-wrapper {
+        width: 100%;
+        height: 200px;
     }
 }
 /* --- VISTA DE LOGIN Y REGISTRO --- */
