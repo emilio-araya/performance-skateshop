@@ -6,7 +6,7 @@ const PRODUCTOS_DEMO = [
         categoria: "Tablas",
         precio: 45000,
         stock: 3,
-        imagen: "/img/logo.jpeg",
+        imagen: "/img/tablas.jpg",
         oferta: false
     },
     {
