@@ -1,0 +1,165 @@
+// Datos iniciales demo
+const PRODUCTOS_DEMO = [
+    {
+        id: "tabla-maple-pro-825",
+        nombre: "Tabla Maple Pro 8.25",
+        categoria: "Tablas",
+        precio: 45000,
+        stock: 3,
+        imagen: "/img/logo.jpeg",
+        oferta: false
+    },
+    {
+        id: "lija-premium-black",
+        nombre: "Lija Premium Black",
+        categoria: "Hardwares",
+        precio: 8900,
+        stock: 12,
+        imagen: "/img/logo.jpeg",
+        oferta: true
+    },
+    {
+        id: "polera-oversize-street",
+        nombre: 'Polera Oversize "Street"',
+        categoria: "Poleras y Polerones",
+        precio: 22000,
+        stock: 2,
+        imagen: "/img/logo.jpeg",
+        oferta: false
+    }
+];
+
+// Demo accounts always exist so the app can never be locked out, even when
+// the browser already holds other users. Credentials are visible to anyone:
+// a real application must keep them on a backend.
+const USUARIOS_DEMO = [
+    {
+        run: '',
+        nombre: 'Administrador',
+        apellidos: 'Performance',
+        email: 'admin@performance.cl',
+        password: 'admin123',
+        rol: 'Administrador'
+    }
+];
+
+const CATEGORIAS_DEMO = ["Tablas", "Poleras y Polerones", "Hardwares", "Accesorios"];
+
+// --- PRODUCTOS ---
+export const getProductos = () => {
+    const data = localStorage.getItem("admin_productos");
+    if (!data) {
+        localStorage.setItem("admin_productos", JSON.stringify(PRODUCTOS_DEMO));
+        return [...PRODUCTOS_DEMO];
+    }
+    return JSON.parse(data);
+};
+
+export const guardarProducto = (producto) => {
+    const productos = getProductos();
+    const index = productos.findIndex(p => p.id === producto.id);
+    if (index >= 0) {
+        productos[index] = producto;
+    } else {
+        productos.push(producto);
+    }
+    localStorage.setItem("admin_productos", JSON.stringify(productos));
+};
+
+export const eliminarProducto = (id) => {
+    const productos = getProductos().filter(p => p.id !== id);
+    localStorage.setItem("admin_productos", JSON.stringify(productos));
+};
+
+export const descontarStock = (items) => {
+    const productos = getProductos();
+    let cambiado = false;
+    for (const item of items) {
+        const producto = productos.find(p => p.id === item.id);
+        if (producto && producto.stock >= item.cantidad) {
+            producto.stock -= item.cantidad;
+            cambiado = true;
+        }
+    }
+    if (cambiado) {
+        localStorage.setItem("admin_productos", JSON.stringify(productos));
+    }
+};
+
+export const getProductosCriticos = (umbral = 5) => {
+    return getProductos().filter(p => Number(p.stock) <= umbral);
+};
+
+// --- CATEGORÍAS ---
+export const getCategorias = () => {
+    const data = localStorage.getItem("admin_categorias");
+    if (!data) {
+        localStorage.setItem("admin_categorias", JSON.stringify(CATEGORIAS_DEMO));
+        return [...CATEGORIAS_DEMO];
+    }
+    return JSON.parse(data);
+};
+
+export const guardarCategoria = (nombre) => {
+    const categorias = getCategorias();
+    if (!categorias.includes(nombre)) {
+        categorias.push(nombre);
+        localStorage.setItem("admin_categorias", JSON.stringify(categorias));
+    }
+};
+
+// --- PEDIDOS Y COMPRAS ---
+export const getPedidos = () => {
+    return JSON.parse(localStorage.getItem("historial_pedidos")) || [];
+};
+
+export const registrarPedido = (pedido) => {
+    const pedidos = getPedidos();
+    pedidos.unshift(pedido);
+    localStorage.setItem("historial_pedidos", JSON.stringify(pedidos));
+};
+
+// --- MENSAJES DE CONTACTO ---
+export const getMensajes = () => {
+    return JSON.parse(localStorage.getItem("mensajes_contacto")) || [];
+};
+
+export const guardarMensaje = (mensaje) => {
+    const mensajes = getMensajes();
+    mensajes.push(mensaje);
+    localStorage.setItem("mensajes_contacto", JSON.stringify(mensajes));
+};
+
+export const eliminarMensaje = (index) => {
+    const mensajes = getMensajes();
+    mensajes.splice(index, 1);
+    localStorage.setItem("mensajes_contacto", JSON.stringify(mensajes));
+};
+
+// --- USUARIOS ---
+export const getUsuarios = () => {
+    const usuarios = JSON.parse(localStorage.getItem("usuarios_registrados")) || [];
+    const faltantes = USUARIOS_DEMO.filter(demo => !usuarios.some(u => u.email === demo.email));
+    if (faltantes.length === 0) {
+        return usuarios;
+    }
+    const completos = [...usuarios, ...faltantes.map(demo => ({ ...demo }))];
+    localStorage.setItem("usuarios_registrados", JSON.stringify(completos));
+    return completos;
+};
+
+export const guardarUsuario = (usuario, index = -1) => {
+    const usuarios = getUsuarios();
+    if (index >= 0) {
+        usuarios[index] = usuario;
+    } else {
+        usuarios.push(usuario);
+    }
+    localStorage.setItem("usuarios_registrados", JSON.stringify(usuarios));
+};
+
+export const eliminarUsuario = (index) => {
+    const usuarios = getUsuarios();
+    usuarios.splice(index, 1);
+    localStorage.setItem("usuarios_registrados", JSON.stringify(usuarios));
+};

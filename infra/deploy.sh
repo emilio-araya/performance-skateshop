@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# Builds the React app and publishes dist/ to the EC2 created by Terraform.
+# Usage (from the project root): ./infra/deploy.sh
+# Optional: SSH_KEY=/path/to/private_key ./infra/deploy.sh
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+SSH_KEY="${SSH_KEY:-$HOME/.ssh/id_ed25519}"
+IP="$(terraform -chdir=infra output -raw public_ip)"
+DESTINO="ubuntu@${IP}"
+SSH_OPTS=(-i "$SSH_KEY" -o StrictHostKeyChecking=accept-new -o ConnectTimeout=5)
+
+echo "==> Building the app"
+npm run build
+
+# nginx starts as soon as apt installs it, before user_data finishes. Waiting
+# for cloud-init avoids uploading the app and then having user_data overwrite
+# it with the placeholder page.
+echo "==> Waiting for the first boot of ${IP} to finish (can take a few minutes)"
+listo=false
+for _ in $(seq 1 30); do
+    if ssh "${SSH_OPTS[@]}" "$DESTINO" 'cloud-init status --wait >/dev/null'; then
+        listo=true
+        break
+    fi
+    sleep 10
+done
+if [ "$listo" != true ]; then
+    echo "ERROR: ${IP} did not finish booting. Check the instance in the AWS console." >&2
+    exit 1
+fi
+
+echo "==> Uploading dist/"
+# Replace the previous release completely, then stream the new one over SSH.
+ssh "${SSH_OPTS[@]}" "$DESTINO" 'find /var/www/eva2 -mindepth 1 -delete'
+tar -C dist -cf - . | ssh "${SSH_OPTS[@]}" "$DESTINO" 'tar -C /var/www/eva2 -xf -'
+
+echo "==> Checking the published page"
+if curl -fsS "http://${IP}/" | cmp -s - dist/index.html; then
+    echo "==> Published: http://${IP}"
+else
+    echo "ERROR: http://${IP}/ does not serve the new build." >&2
+    exit 1
+fi

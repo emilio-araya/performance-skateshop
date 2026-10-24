@@ -1,0 +1,531 @@
+:root {
+    --bg-color: #121212;
+    --surface-color: #1a1a1a;
+    --surface-light: #222222;
+    --accent-color: #ff4a57;
+    --accent-hover: #e03e4b;
+    --text-color: #ffffff;
+    --text-muted: #aaaaaa;
+    --border-color: #2a2a2a;
+    --font-main: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: var(--font-main);
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* --- NAVBAR TIENDA (Afecta solo a header.site-header) --- */
+header.site-header {
+    background-color: var(--surface-color);
+    border-bottom: 1px solid var(--border-color);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 5%;
+    max-width: 1300px;
+    margin: 0 auto;
+}
+
+.logo a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.logo-img {
+    height: 35px;
+    object-fit: contain;
+}
+
+.nav-menu {
+    display: flex;
+    list-style: none;
+    align-items: center;
+    gap: 25px;
+}
+
+.nav-item a {
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: color 0.2s;
+}
+
+.nav-item a:hover {
+    color: var(--accent-color);
+}
+
+.btn-login-nav {
+    background-color: var(--accent-color);
+    padding: 8px 16px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.btn-login-nav:hover {
+    background-color: var(--accent-hover);
+    color: #fff;
+}
+
+.user-dropdown {
+    position: relative;
+}
+
+.user-avatar-btn {
+    background: none;
+    border: none;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.dropdown-content {
+    position: absolute;
+    right: 0;
+    top: 120%;
+    background-color: var(--surface-light);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 8px 0;
+    min-width: 160px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+.dropdown-content button {
+    width: 100%;
+    background: none;
+    border: none;
+    color: var(--text-color);
+    padding: 10px 16px;
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.dropdown-content button:hover {
+    background-color: var(--border-color);
+    color: var(--accent-color);
+}
+
+/* --- HERO & INICIO --- */
+#inicio {
+    height: 75vh;
+    background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('/img/Hero.jpg') center/cover no-repeat;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding-top: 70px;
+}
+
+.hero-content h1 {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.hero-content p {
+    font-size: 1.2rem;
+    color: var(--text-muted);
+    margin-bottom: 25px;
+}
+
+.btn-main {
+    display: inline-block;
+    background-color: var(--accent-color);
+    color: #fff;
+    padding: 12px 28px;
+    border-radius: 4px;
+    font-weight: bold;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-main:hover {
+    background-color: var(--accent-hover);
+}
+
+/* --- SECCION NOSOTROS Y VIDEO --- */
+#nosotros {
+    padding: 80px 0;
+    background-color: var(--surface-color);
+}
+
+.section-title {
+    font-size: 2rem;
+    text-align: center;
+    margin-bottom: 40px;
+    text-transform: uppercase;
+    position: relative;
+}
+
+.section-title::after {
+    content: '';
+    display: block;
+    width: 60px;
+    height: 3px;
+    background-color: var(--accent-color);
+    margin: 10px auto 0;
+}
+
+.about-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    align-items: center;
+}
+
+.about-text p {
+    color: var(--text-muted);
+    margin-bottom: 20px;
+}
+
+.video-wrapper {
+    position: relative;
+    padding-bottom: 56.25%;
+    height: 0;
+    overflow: hidden;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.video-wrapper iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+/* --- TIENDA Y TARJETAS --- */
+#tienda {
+    padding: 80px 0;
+}
+
+.shop-categories {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+}
+
+.cat-btn {
+    background-color: var(--surface-color);
+    color: var(--text-muted);
+    border: 1px solid var(--border-color);
+    padding: 8px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.cat-btn.active, .cat-btn:hover {
+    background-color: var(--accent-color);
+    color: #fff;
+    border-color: var(--accent-color);
+}
+
+.products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 25px;
+}
+
+.product-card {
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+}
+
+.product-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background-color: var(--accent-color);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: bold;
+    padding: 4px 10px;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+.product-img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    background-color: #1a1a1a;
+}
+
+.product-info {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.product-cat {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 5px;
+}
+
+.product-title {
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+}
+
+.product-price {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: var(--accent-color);
+    margin-bottom: 15px;
+}
+
+.btn-ask {
+    display: block;
+    text-align: center;
+    background-color: #25d366;
+    color: #fff;
+    padding: 8px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.btn-cart {
+    width: 100%;
+    background-color: var(--surface-light);
+    color: #fff;
+    border: 1px solid var(--border-color);
+    padding: 10px;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-cart:hover {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+/* --- FOOTER --- */
+.site-footer {
+    background-color: #0a0a0a;
+    border-top: 1px solid var(--border-color);
+    padding-top: 60px;
+    margin-top: 80px;
+}
+
+.footer-container {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 2fr;
+    gap: 40px;
+    padding-bottom: 40px;
+}
+
+.footer-logo {
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: var(--accent-color);
+    margin-bottom: 15px;
+}
+
+.brand-col p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+}
+
+.social-links {
+    display: flex;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.social-links a {
+    color: #fff;
+    background-color: var(--surface-color);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.footer-col h4 {
+    margin-bottom: 20px;
+    font-size: 1.1rem;
+}
+
+.footer-col ul {
+    list-style: none;
+}
+
+.footer-col ul li {
+    margin-bottom: 10px;
+}
+
+.footer-col ul li a {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.footer-col ul li a:hover {
+    color: #fff;
+}
+
+.newsletter-form {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.newsletter-form input {
+    flex-grow: 1;
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color);
+    padding: 10px;
+    color: #fff;
+    border-radius: 4px;
+}
+
+.newsletter-form button {
+    background-color: var(--accent-color);
+    color: #fff;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.footer-bottom {
+    background-color: #050505;
+    padding: 20px 0;
+    border-top: 1px solid #1a1a1a;
+}
+
+.footer-bottom-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+@media (max-width: 768px) {
+    .about-grid, .footer-container {
+        grid-template-columns: 1fr;
+    }
+}
+/* --- VISTA DE LOGIN Y REGISTRO --- */
+.login-page {
+    padding-top: 120px;
+    padding-bottom: 80px;
+    min-height: 80vh;
+}
+
+.login-container {
+    max-width: 440px;
+}
+
+.login-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 25px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 12px;
+}
+
+.login-tabs .user-tab-btn {
+    flex: 1;
+}
+
+.alert-box {
+    padding: 10px 14px;
+    border-radius: 4px;
+    margin-bottom: 18px;
+    font-size: 0.85rem;
+}
+
+.alert-error {
+    background-color: rgba(255, 74, 87, 0.2);
+    border: 1px solid var(--accent-color);
+    color: var(--accent-color);
+}
+
+.alert-success {
+    background-color: rgba(37, 211, 102, 0.2);
+    border: 1px solid #25d366;
+    color: #25d366;
+}
+
+.w-100 { width: 100%; }
+
+.login-notes {
+    margin-top: 25px;
+    padding: 14px;
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.login-notes-title {
+    font-weight: bold;
+    color: #ffffff;
+    margin-bottom: 4px;
+}
