@@ -3,8 +3,7 @@ import SidebarAdmin from '../../components/SidebarAdmin';
 import { getCategorias, guardarCategoria } from '../../services/mockStorage';
 
 const GestionCategorias = () => {
-    // Leído una vez al montar; la lista no se edita desde esta página.
-    const [categorias] = useState(() => getCategorias());
+    const [categorias, setCategorias] = useState(() => getCategorias());
     const [nuevaCat, setNuevaCat] = useState('');
 
     const handleAgregar = (e) => {

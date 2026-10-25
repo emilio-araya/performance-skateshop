@@ -2,6 +2,23 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import ProductosCriticos from '../Pages/Admin/Productos_criticos';
+import GestionCategorias from '../Pages/Admin/Gestion_categorias';
+
+describe('Admin - Gestión de categorías', () => {
+    beforeEach(() => localStorage.clear());
+
+    it('adds the new category to the table and clears the input', () => {
+        render(<MemoryRouter><GestionCategorias /></MemoryRouter>);
+        const campo = screen.getByPlaceholderText('Ej: Calzado Skate');
+
+        fireEvent.change(campo, { target: { value: '  Calzado Skate  ' } });
+        fireEvent.click(screen.getByRole('button', { name: /Guardar Categoría/ }));
+
+        expect(within(screen.getByRole('table')).getByText('Calzado Skate')).toBeTruthy();
+        expect(campo.value).toBe('');
+        expect(JSON.parse(localStorage.getItem('admin_categorias'))).toContain('Calzado Skate');
+    });
+});
 
 const renderCriticos = () => render(
     <MemoryRouter initialEntries={['/admin/productos/criticos']}>
