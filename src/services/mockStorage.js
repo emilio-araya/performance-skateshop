@@ -93,21 +93,6 @@ export const eliminarProducto = (id) => {
     localStorage.setItem("admin_productos", JSON.stringify(productos));
 };
 
-export const descontarStock = (items) => {
-    const productos = getProductos();
-    let cambiado = false;
-    for (const item of items) {
-        const producto = productos.find(p => p.id === item.id);
-        if (producto && producto.stock >= item.cantidad) {
-            producto.stock -= item.cantidad;
-            cambiado = true;
-        }
-    }
-    if (cambiado) {
-        localStorage.setItem("admin_productos", JSON.stringify(productos));
-    }
-};
-
 export const getProductosCriticos = (umbral = 5) => {
     return getProductos().filter(p => Number(p.stock) <= umbral);
 };
@@ -135,10 +120,57 @@ export const getPedidos = () => {
     return JSON.parse(localStorage.getItem("historial_pedidos")) || [];
 };
 
-export const registrarPedido = (pedido) => {
-    const pedidos = getPedidos();
-    pedidos.unshift(pedido);
-    localStorage.setItem("historial_pedidos", JSON.stringify(pedidos));
+const siguienteIdPedido = () => {
+    const contador = parseInt(localStorage.getItem("contador_pedidos") || "0", 10) + 1;
+    localStorage.setItem("contador_pedidos", String(contador));
+    return `pedido-${contador}`;
+};
+
+// Returns the first cart line the catalogue cannot cover, or undefined.
+const buscarFaltaDeStock = (productos, items) =>
+    items
+        .map((item) => ({ item, producto: productos.find((p) => p.id === item.id) }))
+        .find(({ item, producto }) => !producto || Number(producto.stock) < item.cantidad);
+
+/**
+ * Creates an order in one step. A paid order is checked against stock before
+ * anything is written, so it either saves the order and discounts every line,
+ * or returns an error and leaves storage untouched.
+ * A rejected payment is recorded as is and never touches stock.
+ */
+export const confirmarPedido = ({ cliente, items, total, exitoso }) => {
+    const productos = getProductos();
+
+    if (exitoso) {
+        const falta = buscarFaltaDeStock(productos, items);
+        if (falta) {
+            const quedan = falta.producto ? Number(falta.producto.stock) : 0;
+            return { error: `No hay stock suficiente de ${falta.item.nombre} (quedan ${quedan}).` };
+        }
+    }
+
+    const pedido = {
+        id: siguienteIdPedido(),
+        fecha: new Date().toLocaleDateString("es-CL"),
+        cliente: `${cliente.nombre} ${cliente.apellidos}`,
+        correo: cliente.correo,
+        direccion: `${cliente.calle}, ${cliente.comuna}, ${cliente.region}`,
+        resumenItems: items.map((i) => `${i.cantidad}x ${i.nombre}`).join(", "),
+        total,
+        items,
+        estado: exitoso ? "Aprobado" : "Rechazado"
+    };
+
+    if (exitoso) {
+        const actualizados = productos.map((producto) => {
+            const item = items.find((i) => i.id === producto.id);
+            return item ? { ...producto, stock: Number(producto.stock) - item.cantidad } : producto;
+        });
+        localStorage.setItem("admin_productos", JSON.stringify(actualizados));
+    }
+    localStorage.setItem("historial_pedidos", JSON.stringify([pedido, ...getPedidos()]));
+
+    return { pedido };
 };
 
 // --- MENSAJES DE CONTACTO ---

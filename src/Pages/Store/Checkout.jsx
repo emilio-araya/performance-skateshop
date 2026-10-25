@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCarrito } from '../../context/Contexto_carrito';
 import { useSesion } from '../../context/Contexto_sesion';
 import Campo from '../../components/Campo';
-import { registrarPedido, descontarStock } from '../../services/mockStorage';
+import { confirmarPedido } from '../../services/mockStorage';
 
 const Checkout = () => {
     const { carrito, totalPagar, disminuirCantidad, agregarAlCarrito, eliminarDelCarrito, vaciarCarrito } = useCarrito();
@@ -44,31 +44,17 @@ const Checkout = () => {
             return;
         }
 
-        const contador = parseInt(localStorage.getItem('contador_pedidos') || '0', 10) + 1;
-        localStorage.setItem('contador_pedidos', String(contador));
-        const orderId = `pedido-${contador}`;
-        const resumen = carrito.map(i => `${i.cantidad}x ${i.nombre}`).join(', ');
-
-        const nuevoPedido = {
-            id: orderId,
-            fecha: new Date().toLocaleDateString("es-CL"),
-            cliente: `${form.nombre} ${form.apellidos}`,
-            correo: form.correo,
-            direccion: `${form.calle}, ${form.comuna}, ${form.region}`,
-            resumenItems: resumen,
-            total: totalPagar,
-            items: carrito,
-            estado: exitoso ? "Aprobado" : "Rechazado"
-        };
-
-        registrarPedido(nuevoPedido);
+        const { pedido, error } = confirmarPedido({ cliente: form, items: carrito, total: totalPagar, exitoso });
+        if (error) {
+            alert(error);
+            return;
+        }
 
         if (exitoso) {
-            descontarStock(carrito);
             vaciarCarrito();
-            navigate('/pago-correcto', { state: nuevoPedido });
+            navigate('/pago-correcto', { state: pedido });
         } else {
-            navigate('/pago-error', { state: nuevoPedido });
+            navigate('/pago-error', { state: pedido });
         }
     };
 
