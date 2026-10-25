@@ -1,8 +1,66 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { ProveedorSesion } from '../context/Contexto_sesion';
+import RutaAdmin from '../components/RutaAdmin';
+import Dashboard from '../Pages/Admin/Dashboard';
+import ProductosAdmin from '../Pages/Admin/Productos';
 import ProductosCriticos from '../Pages/Admin/Productos_criticos';
+import DetalleProductosAdmin from '../Pages/Admin/Detalle_productos';
 import GestionCategorias from '../Pages/Admin/Gestion_categorias';
+import GestionUsuarios from '../Pages/Admin/Gestion_usuarios';
+import RegistroCompras from '../Pages/Admin/Registro_compras';
+
+// Same admin route tree as App.jsx, rendered with a logged-in administrator.
+const renderAdmin = (ruta) => {
+    localStorage.setItem('usuario_logueado', JSON.stringify({
+        nombre: 'Administrador', apellidos: 'Performance', email: 'admin@performance.cl', rol: 'Administrador'
+    }));
+    return render(
+        <ProveedorSesion>
+            <MemoryRouter initialEntries={[ruta]}>
+                <Routes>
+                    <Route path="/admin" element={<RutaAdmin />}>
+                        <Route index element={<Dashboard />} />
+                        <Route path="productos" element={<ProductosAdmin />} />
+                        <Route path="productos/criticos" element={<ProductosCriticos />} />
+                        <Route path="producto/:id" element={<DetalleProductosAdmin />} />
+                        <Route path="categorias" element={<GestionCategorias />} />
+                        <Route path="usuarios" element={<GestionUsuarios />} />
+                        <Route path="pedidos" element={<RegistroCompras />} />
+                    </Route>
+                </Routes>
+            </MemoryRouter>
+        </ProveedorSesion>
+    );
+};
+
+describe('Admin - shared panel layout', () => {
+    beforeEach(() => localStorage.clear());
+
+    it.each([
+        ['/admin', 'Dashboard Principal'],
+        ['/admin/productos', 'Gestión de Productos'],
+        ['/admin/productos/criticos', 'Listado de Productos Críticos'],
+        ['/admin/producto/tabla-maple-pro-825', 'Detalle del Producto: Tabla Maple Pro 8.25'],
+        ['/admin/categorias', 'Gestión de Categorías'],
+        ['/admin/usuarios', 'Gestión de Usuarios'],
+        ['/admin/pedidos', 'Historial de Compras y Boletas']
+    ])('%s shows its page inside one sidebar layout', (ruta, titulo) => {
+        const { container } = renderAdmin(ruta);
+
+        expect(screen.getByRole('heading', { level: 1, name: titulo })).toBeTruthy();
+        expect(container.querySelectorAll('aside.sidebar')).toHaveLength(1);
+        expect(container.querySelector('.admin-body > .admin-main h1').textContent).toBe(titulo);
+    });
+
+    it('keeps the layout when the product does not exist', () => {
+        const { container } = renderAdmin('/admin/producto/no-existe');
+
+        expect(container.querySelectorAll('aside.sidebar')).toHaveLength(1);
+        expect(container.querySelector('.admin-main')).toBeTruthy();
+    });
+});
 
 describe('Admin - Gestión de categorías', () => {
     beforeEach(() => localStorage.clear());
@@ -48,7 +106,7 @@ describe('Admin - Productos críticos', () => {
     });
 
     it('marks only "Stock Crítico" as active in the sidebar', () => {
-        renderCriticos();
+        renderAdmin('/admin/productos/criticos');
 
         expect(screen.getByRole('link', { name: /Stock Crítico/ }).className).toContain('active');
         expect(screen.getByRole('link', { name: /^\s*Productos$/ }).className).not.toContain('active');

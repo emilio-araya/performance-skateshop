@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import SidebarAdmin from '../../components/SidebarAdmin';
 import ImagenProducto from '../../components/ImagenProducto';
 import { getProductosCriticos } from '../../services/mockStorage';
 
@@ -10,55 +9,52 @@ const ProductosCriticos = () => {
     const [criticos] = useState(() => getProductosCriticos(UMBRAL_STOCK_CRITICO));
 
     return (
-        <div className="admin-body">
-            <SidebarAdmin />
-            <main className="admin-main">
-                <header className="admin-header">
-                    <h1>Listado de Productos Críticos</h1>
-                </header>
+        <>
+        <header className="admin-header">
+            <h1>Listado de Productos Críticos</h1>
+        </header>
 
-                <div className="admin-container">
-                    <p className="admin-descripcion">
-                        Productos con existencias en bodega iguales o inferiores a {UMBRAL_STOCK_CRITICO} unidades.
-                    </p>
+        <div className="admin-container">
+            <p className="admin-descripcion">
+                Productos con existencias en bodega iguales o inferiores a {UMBRAL_STOCK_CRITICO} unidades.
+            </p>
 
-                    <div className="table-responsive">
-                        <table className="admin-table">
-                            <thead>
-                                <tr>
-                                    <th>Imagen</th>
-                                    <th>Nombre</th>
-                                    <th>Categoría</th>
-                                    <th>Precio</th>
-                                    <th>Stock Actual</th>
-                                    <th>Estado Alerta</th>
+            <div className="table-responsive">
+                <table className="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Imagen</th>
+                            <th>Nombre</th>
+                            <th>Categoría</th>
+                            <th>Precio</th>
+                            <th>Stock Actual</th>
+                            <th>Estado Alerta</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {criticos.length > 0 ? (
+                            criticos.map(p => (
+                                <tr key={p.id}>
+                                    <td><ImagenProducto src={p.imagen} alt={p.nombre} className="img-thumb" /></td>
+                                    <td><strong>{p.nombre}</strong></td>
+                                    <td><span className="badge-admin">{p.categoria}</span></td>
+                                    <td>${Number(p.precio).toLocaleString("es-CL")}</td>
+                                    <td className="stock-critico">{p.stock} un.</td>
+                                    <td>
+                                        <span className="badge badge-alerta">Reponer Stock</span>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                {criticos.length > 0 ? (
-                                    criticos.map(p => (
-                                        <tr key={p.id}>
-                                            <td><ImagenProducto src={p.imagen} alt={p.nombre} className="img-thumb" /></td>
-                                            <td><strong>{p.nombre}</strong></td>
-                                            <td><span className="badge-admin">{p.categoria}</span></td>
-                                            <td>${Number(p.precio).toLocaleString("es-CL")}</td>
-                                            <td className="stock-critico">{p.stock} un.</td>
-                                            <td>
-                                                <span className="badge badge-alerta">Reponer Stock</span>
-                                            </td>
-                                        </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td colSpan="6" className="tabla-vacia">No hay productos en estado crítico.</td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </main>
+                            ))
+                        ) : (
+                            <tr>
+                                <td colSpan="6" className="tabla-vacia">No hay productos en estado crítico.</td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
         </div>
+        </>
     );
 };
 
