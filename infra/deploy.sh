@@ -7,6 +7,37 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 SSH_KEY="${SSH_KEY:-$HOME/.ssh/id_ed25519}"
+
+# The security group only allows SSH from one CIDR, and home connections are
+# usually dynamic. Before connecting, allow the current public IP and keep the
+# rule as narrow as a single address (/32). Never widen it to a larger range.
+permitir_ssh_desde_ip_actual() {
+    local ip_publica cidr tfvars="infra/terraform.tfvars"
+
+    if ! ip_publica="$(curl -fsS -m 10 https://checkip.amazonaws.com)"; then
+        echo "WARNING: could not read the public IP; keeping the current SSH rule." >&2
+        return
+    fi
+    ip_publica="${ip_publica//[[:space:]]/}"
+
+    if [[ ! "$ip_publica" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]]; then
+        echo "WARNING: unexpected public IP '${ip_publica}'; keeping the current SSH rule." >&2
+        return
+    fi
+
+    cidr="${ip_publica}/32"
+    echo "==> Allowing SSH from ${cidr}"
+    terraform -chdir=infra apply -input=false -auto-approve -no-color \
+        -var="ssh_allowed_cidr=${cidr}" >/dev/null
+
+    # Keep the file in sync, so a later `terraform plan` without -var agrees.
+    if [ -f "$tfvars" ] && grep -q '^ssh_allowed_cidr' "$tfvars"; then
+        sed -i "s|^ssh_allowed_cidr = .*|ssh_allowed_cidr = \"${cidr}\"|" "$tfvars"
+    fi
+}
+
+permitir_ssh_desde_ip_actual
+
 IP="$(terraform -chdir=infra output -raw public_ip)"
 DESTINO="ubuntu@${IP}"
 SSH_OPTS=(-i "$SSH_KEY" -o StrictHostKeyChecking=accept-new -o ConnectTimeout=5)
