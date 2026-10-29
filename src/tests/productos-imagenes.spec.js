@@ -33,6 +33,20 @@ describe('Product images', () => {
         expect(JSON.parse(localStorage.getItem(KEY))[0].imagen).toBe('/img/productos/tabla-maple-pro-825.jpg');
     });
 
+    it('replaces the images saved by the previous published version', () => {
+        localStorage.setItem(KEY, JSON.stringify([
+            { id: 'tabla-maple-pro-825', nombre: 'Tabla Maple Pro 8.25', imagen: '/img/tablas.jpg' },
+            { id: 'lija-premium-black', nombre: 'Lija Premium Black', imagen: '/img/lija.jpg' },
+            { id: 'polera-oversize-street', nombre: 'Polera Oversize "Street"', imagen: '/img/polera.jpg' }
+        ]));
+
+        expect(getProductos().map(p => p.imagen)).toEqual([
+            '/img/productos/tabla-maple-pro-825.jpg',
+            '/img/productos/lija-premium-black.jpg',
+            '/img/productos/polera-oversize-street.jpg'
+        ]);
+    });
+
     it('keeps an image chosen by the admin', () => {
         localStorage.setItem(KEY, JSON.stringify([
             { id: 'tabla-maple-pro-825', nombre: 'Tabla Maple Pro 8.25', imagen: '/img/mi-tabla.png' },

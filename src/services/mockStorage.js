@@ -78,14 +78,16 @@ const USUARIOS_DEMO = [
 const CATEGORIAS_DEMO = ["Tablas", "Poleras y Polerones", "Hardwares", "Accesorios"];
 
 // --- PRODUCTOS ---
-// Placeholder that earlier versions saved as the image of every demo product.
-const IMAGEN_GENERICA = "/img/logo.jpeg";
+// Images that earlier versions saved for the demo products. Browsers that
+// visited those versions still have them in localStorage, and the files no
+// longer exist on the server.
+const IMAGENES_ANTERIORES = ["/img/logo.jpeg", "/img/tablas.jpg", "/img/lija.jpg", "/img/polera.jpg"];
 
-// Demo products saved by an earlier version keep the generic logo; give them
-// the image that matches their name. An image chosen by the admin is kept.
+// Give each demo product saved by an earlier version the image that matches
+// its name. An image chosen by the admin is kept.
 const asignarImagenDemo = (producto) => {
     const demo = PRODUCTOS_DEMO.find(p => p.id === producto.id);
-    const sinImagenPropia = !producto.imagen || producto.imagen === IMAGEN_GENERICA;
+    const sinImagenPropia = !producto.imagen || IMAGENES_ANTERIORES.includes(producto.imagen);
     return demo && sinImagenPropia ? { ...producto, imagen: demo.imagen } : producto;
 };
 
