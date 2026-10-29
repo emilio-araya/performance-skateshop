@@ -1,50 +1,47 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-// Same four articles as fase 1 (js/blogs.js of the original project).
+const IMAGEN_DEFAULT_BLOG = "https://images.unsplash.com/photo-1564982752979-3f7bc974d29a?auto=format&fit=crop&w=800&q=80";
+
 export const BLOGS_DATA = [
     {
-        id: 1,
-        titulo: "Guía Definitiva: Cómo elegir tu primera tabla de skate (y no morir en el intento)",
-        desc: "Si estás pensando en armar tu primer setup pero te abruman los tecnicismos, esta guía es para ti",
+        id: 1, 
+        titulo: "Guía Definitiva: Cómo elegir tu primera tabla de skate",
+        desc: "Aprende todo sobre maderas, cóncavos y medidas ideales.",
         img: "/img/Caso1.jpg"
     },
     {
         id: 2,
-        titulo: "Ruedas blandas vs. Ruedas duras: ¿Cuáles necesitas para dominar la ciudad?",
-        desc: "No todas las ruedas se comportan igual sobre el asfalto. Si tu objetivo es recorrer las calles de tu ciudad sin que tus pies terminen vibrando por el pavimento rugoso, necesitas conocer el durómetro de tus ruedas.",
+        titulo: "Ruedas blandas vs. Ruedas duras",
+        desc: "Conoce la dureza adecuada según la superficie sobre la que patinas.",
         img: "/img/Caso2.webp"
-    },
-    {
-        id: 3,
-        titulo: "El Arte sobre la Madera: Los gráficos de skate más icónicos de la historia",
-        desc: "El skateboarding es tanto un deporte como una forma de expresión artística. Desde los míticos diseños de Powell-Peralta y Santa Cruz en los años 80 hasta las colaboraciones modernas de Supreme, repasamos las ilustraciones que definieron a generaciones enteras.",
-        img: "/img/Caso3.jpg"
-    },
-    {
-        id: 4,
-        titulo: "¿Necesitas renovar tu setup?",
-        desc: "En nuestra tienda online contamos con stock permanente de tablas, trucks, ruedas, rulemanes y accesorios de las marcas más respetadas de la escena.",
-        img: "/img/Caso4.webp"
     }
 ];
 
 const Blogs = () => {
     return (
-        <main className="blog-section" style={{ paddingTop: '110px' }}>
-            <h2 className="section-title">Noticias & Blog</h2>
+        <main className="container" style={{ paddingTop: '110px', paddingBottom: '60px', minHeight: '80vh' }}>
+            <h1 className="section-title">Noticias & Blog</h1>
+            
             <div className="blog-grid">
                 {BLOGS_DATA.map(blog => (
                     <article key={blog.id} className="blog-card">
-                        <div className="blog-content">
-                            <div>
-                                <h3>{blog.titulo}</h3>
-                                <p>{blog.desc}</p>
-                            </div>
-                            <Link to={`/blog/${blog.id}`} className="btn-ver-caso">Ver caso</Link>
-                        </div>
                         <div className="blog-image-wrapper">
-                            <img src={blog.img} alt={blog.titulo} />
+                            <img 
+                                src={blog.img} 
+                                alt={blog.titulo} 
+                                onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.src = IMAGEN_DEFAULT_BLOG;
+                                }}
+                            />
+                        </div>
+                        <div className="blog-content">
+                            <h3>{blog.titulo}</h3>
+                            <p>{blog.desc}</p>
+                            <Link to={`/blog/${blog.id}`} className="btn-ver-caso">
+                                Ver caso <i className="fas fa-arrow-right"></i>
+                            </Link>
                         </div>
                     </article>
                 ))}

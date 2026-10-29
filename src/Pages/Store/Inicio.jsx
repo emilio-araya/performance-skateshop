@@ -39,26 +39,11 @@ const Inicio = () => {
                         </div>
                         <div className="about-video-container">
                             <div className="video-wrapper">
-                                {/* The owner of this video disabled inline playback, so an
-                                    embedded player would only show "Video unavailable".
-                                    The poster links to YouTube instead. */}
-                                <a
-                                    className="video-facade"
-                                    href="https://www.youtube.com/watch?v=295z4jtqq2A"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    aria-label="Ver el video de Performance en YouTube"
-                                >
-                                    <img
-                                        src="https://i.ytimg.com/vi/295z4jtqq2A/maxresdefault.jpg"
-                                        alt="Performance Crew Video"
-                                    />
-                                    <span className="video-play" aria-hidden="true">
-                                        <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
-                                            <path d="M8 5v14l11-7z" />
-                                        </svg>
-                                    </span>
-                                </a>
+                                <iframe 
+                                    src="https://www.youtube.com/embed/295z4jtqq2A" 
+                                    title="Performance Crew Video"
+                                    allowFullScreen
+                                ></iframe>
                             </div>
                         </div>
                     </div>

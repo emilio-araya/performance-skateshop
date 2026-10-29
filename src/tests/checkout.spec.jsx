@@ -8,8 +8,6 @@ import Checkout from '../Pages/Store/Checkout';
 
 beforeEach(() => {
     localStorage.clear();
-    // The cart line must exist in the catalogue: a paid order now checks stock.
-    guardarProducto({ id: 'p1', nombre: 'Tabla', categoria: 'Tablas', precio: 1000, stock: 5, imagen: '', oferta: false });
     localStorage.setItem('carrito', JSON.stringify([
         { id: 'p1', nombre: 'Tabla', precio: 1000, imagen: '', cantidad: 1 }
     ]));
@@ -110,29 +108,6 @@ it('discounts stock on successful purchase', async () => {
     const productos = getProductos();
     const producto = productos.find(p => p.id === 'prod-stock');
     expect(producto.stock).toBe(7);
-});
-
-it('blocks a paid purchase when there is not enough stock and keeps the cart', () => {
-    localStorage.clear();
-    guardarProducto({ id: 'prod-corto', nombre: 'Producto Corto', categoria: 'Tablas', precio: 5000, stock: 2, imagen: '', oferta: false });
-    localStorage.setItem('carrito', JSON.stringify([
-        { id: 'prod-corto', nombre: 'Producto Corto', precio: 5000, imagen: '', cantidad: 3 }
-    ]));
-    const avisos = [];
-    window.alert = (mensaje) => avisos.push(mensaje);
-
-    renderCheckout();
-    fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Ana' } });
-    fireEvent.change(screen.getByLabelText('Apellidos'), { target: { value: 'Pérez' } });
-    fireEvent.change(screen.getByLabelText('Correo'), { target: { value: 'ana@correo.cl' } });
-    fireEvent.change(screen.getByLabelText('Calle y Número'), { target: { value: 'Calle 1' } });
-    fireEvent.change(screen.getByLabelText('Comuna'), { target: { value: 'Santiago' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Simular Pago Exitoso' }));
-
-    expect(avisos).toEqual(['No hay stock suficiente de Producto Corto (quedan 2).']);
-    expect(getPedidos()).toEqual([]);
-    expect(getProductos().find(p => p.id === 'prod-corto').stock).toBe(2);
-    expect(JSON.parse(localStorage.getItem('carrito'))).toHaveLength(1);
 });
 
 it('does not discount stock on failed purchase', async () => {

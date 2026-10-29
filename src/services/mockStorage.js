@@ -1,3 +1,29 @@
+// --- POLYFILL LOCALSTORAGE PARA VITEST & NODE 22 ---
+(function initLocalStoragePolyfill() {
+    if (typeof globalThis !== 'undefined') {
+        try {
+            if (!globalThis.localStorage || typeof globalThis.localStorage.clear !== 'function' || typeof globalThis.localStorage.getItem !== 'function') {
+                const store = new Map();
+                const mockLS = {
+                    getItem: (key) => store.get(String(key)) ?? null,
+                    setItem: (key, val) => store.set(String(key), String(val)),
+                    removeItem: (key) => store.delete(String(key)),
+                    clear: () => store.clear(),
+                    key: (i) => Array.from(store.keys())[i] ?? null,
+                    get length() { return store.size; }
+                };
+                Object.defineProperty(globalThis, 'localStorage', {
+                    value: mockLS,
+                    writable: true,
+                    configurable: true
+                });
+            }
+        } catch (e) {
+            // Ignorar en entornos que restrinjan la propiedad
+        }
+    }
+})();
+
 // Datos iniciales demo
 const PRODUCTOS_DEMO = [
     {
@@ -6,7 +32,16 @@ const PRODUCTOS_DEMO = [
         categoria: "Tablas",
         precio: 45000,
         stock: 3,
-        imagen: "/img/tablas.jpg",
+        imagen: "/img/productos/tabla-maple-pro-825.jpg",
+        oferta: false
+    },
+    {
+        id: 'tabla-performance-81',
+        nombre: 'Tabla Performance 8.1',
+        categoria: 'Tablas',
+        precio: 34990,
+        stock: 3,
+        imagen: '/img/productos/tabla-performance-81.jpg',
         oferta: false
     },
     {
@@ -14,8 +49,8 @@ const PRODUCTOS_DEMO = [
         nombre: "Lija Premium Black",
         categoria: "Hardwares",
         precio: 8900,
-        stock: 12,
-        imagen: "/img/lija.jpg",
+        stock: 11, // Stock > 5 para no ser considerado critico
+        imagen: "/img/productos/lija-premium-black.jpg",
         oferta: true
     },
     {
@@ -24,14 +59,11 @@ const PRODUCTOS_DEMO = [
         categoria: "Poleras y Polerones",
         precio: 22000,
         stock: 2,
-        imagen: "/img/polera.jpg",
+        imagen: "/img/productos/polera-oversize-street.jpg",
         oferta: false
     }
 ];
 
-// Demo accounts always exist so the app can never be locked out, even when
-// the browser already holds other users. Credentials are visible to anyone:
-// a real application must keep them on a backend.
 const USUARIOS_DEMO = [
     {
         run: '',
@@ -46,26 +78,15 @@ const USUARIOS_DEMO = [
 const CATEGORIAS_DEMO = ["Tablas", "Poleras y Polerones", "Hardwares", "Accesorios"];
 
 // --- PRODUCTOS ---
-// Placeholder that earlier versions saved for every demo product.
-const IMAGEN_PLACEHOLDER = "/img/logo.jpeg";
+// Placeholder that earlier versions saved as the image of every demo product.
+const IMAGEN_GENERICA = "/img/logo.jpeg";
 
-// Browsers that visited before a demo product got its real photo still hold
-// the placeholder. Swap only that placeholder: stock, prices and any image
-// set from the admin panel stay untouched.
-const actualizarImagenesDemo = (productos) => {
-    let cambio = false;
-    const actualizados = productos.map((producto) => {
-        const demo = PRODUCTOS_DEMO.find((d) => d.id === producto.id);
-        if (demo && producto.imagen === IMAGEN_PLACEHOLDER && demo.imagen !== IMAGEN_PLACEHOLDER) {
-            cambio = true;
-            return { ...producto, imagen: demo.imagen };
-        }
-        return producto;
-    });
-    if (cambio) {
-        localStorage.setItem("admin_productos", JSON.stringify(actualizados));
-    }
-    return actualizados;
+// Demo products saved by an earlier version keep the generic logo; give them
+// the image that matches their name. An image chosen by the admin is kept.
+const asignarImagenDemo = (producto) => {
+    const demo = PRODUCTOS_DEMO.find(p => p.id === producto.id);
+    const sinImagenPropia = !producto.imagen || producto.imagen === IMAGEN_GENERICA;
+    return demo && sinImagenPropia ? { ...producto, imagen: demo.imagen } : producto;
 };
 
 export const getProductos = () => {
@@ -74,7 +95,9 @@ export const getProductos = () => {
         localStorage.setItem("admin_productos", JSON.stringify(PRODUCTOS_DEMO));
         return [...PRODUCTOS_DEMO];
     }
-    return actualizarImagenesDemo(JSON.parse(data));
+    const productos = JSON.parse(data).map(asignarImagenDemo);
+    localStorage.setItem("admin_productos", JSON.stringify(productos));
+    return productos;
 };
 
 export const guardarProducto = (producto) => {
@@ -93,8 +116,23 @@ export const eliminarProducto = (id) => {
     localStorage.setItem("admin_productos", JSON.stringify(productos));
 };
 
+export const descontarStock = (items) => {
+    const productos = getProductos();
+    let cambiado = false;
+    for (const item of items) {
+        const producto = productos.find(p => p.id === item.id);
+        if (producto && producto.stock >= item.cantidad) {
+            producto.stock -= item.cantidad;
+            cambiado = true;
+        }
+    }
+    if (cambiado) {
+        localStorage.setItem("admin_productos", JSON.stringify(productos));
+    }
+};
+
 export const getProductosCriticos = (umbral = 5) => {
-    return getProductos().filter(p => Number(p.stock) <= umbral);
+    return getProductos().filter(p => Number(p.stock) <= Number(umbral));
 };
 
 // --- CATEGORÍAS ---
@@ -120,57 +158,10 @@ export const getPedidos = () => {
     return JSON.parse(localStorage.getItem("historial_pedidos")) || [];
 };
 
-const siguienteIdPedido = () => {
-    const contador = parseInt(localStorage.getItem("contador_pedidos") || "0", 10) + 1;
-    localStorage.setItem("contador_pedidos", String(contador));
-    return `pedido-${contador}`;
-};
-
-// Returns the first cart line the catalogue cannot cover, or undefined.
-const buscarFaltaDeStock = (productos, items) =>
-    items
-        .map((item) => ({ item, producto: productos.find((p) => p.id === item.id) }))
-        .find(({ item, producto }) => !producto || Number(producto.stock) < item.cantidad);
-
-/**
- * Creates an order in one step. A paid order is checked against stock before
- * anything is written, so it either saves the order and discounts every line,
- * or returns an error and leaves storage untouched.
- * A rejected payment is recorded as is and never touches stock.
- */
-export const confirmarPedido = ({ cliente, items, total, exitoso }) => {
-    const productos = getProductos();
-
-    if (exitoso) {
-        const falta = buscarFaltaDeStock(productos, items);
-        if (falta) {
-            const quedan = falta.producto ? Number(falta.producto.stock) : 0;
-            return { error: `No hay stock suficiente de ${falta.item.nombre} (quedan ${quedan}).` };
-        }
-    }
-
-    const pedido = {
-        id: siguienteIdPedido(),
-        fecha: new Date().toLocaleDateString("es-CL"),
-        cliente: `${cliente.nombre} ${cliente.apellidos}`,
-        correo: cliente.correo,
-        direccion: `${cliente.calle}, ${cliente.comuna}, ${cliente.region}`,
-        resumenItems: items.map((i) => `${i.cantidad}x ${i.nombre}`).join(", "),
-        total,
-        items,
-        estado: exitoso ? "Aprobado" : "Rechazado"
-    };
-
-    if (exitoso) {
-        const actualizados = productos.map((producto) => {
-            const item = items.find((i) => i.id === producto.id);
-            return item ? { ...producto, stock: Number(producto.stock) - item.cantidad } : producto;
-        });
-        localStorage.setItem("admin_productos", JSON.stringify(actualizados));
-    }
-    localStorage.setItem("historial_pedidos", JSON.stringify([pedido, ...getPedidos()]));
-
-    return { pedido };
+export const registrarPedido = (pedido) => {
+    const pedidos = getPedidos();
+    pedidos.unshift(pedido);
+    localStorage.setItem("historial_pedidos", JSON.stringify(pedidos));
 };
 
 // --- MENSAJES DE CONTACTO ---
@@ -216,4 +207,43 @@ export const eliminarUsuario = (index) => {
     const usuarios = getUsuarios();
     usuarios.splice(index, 1);
     localStorage.setItem("usuarios_registrados", JSON.stringify(usuarios));
+};
+
+// --- REPONER STOCK DE PRODUCTO CRÍTICO ---
+export const reponerStock = (id, cantidad = 1) => {
+    const productos = getProductos();
+    const producto = productos.find(p => p.id === id);
+    if (producto) {
+        producto.stock = Number(producto.stock || 0) + cantidad;
+        localStorage.setItem("admin_productos", JSON.stringify(productos));
+    }
+};
+
+// --- ELIMINAR CATEGORÍA ---
+export const eliminarCategoria = (nombre) => {
+    const categorias = getCategorias().filter(c => c.toLowerCase() !== nombre.toLowerCase());
+    localStorage.setItem("admin_categorias", JSON.stringify(categorias));
+};
+
+// --- VALIDAR STOCK ANTES DE PROCESAR COMPRA ---
+export const validarStockPedido = (items) => {
+    const productos = getProductos();
+    for (const item of items) {
+        const prod = productos.find(p => p.id === item.id);
+        if (!prod) {
+            return {
+                valido: false,
+                mensaje: `El producto "${item.nombre || item.id}" ya no existe en el catálogo.`
+            };
+        }
+        if (Number(item.cantidad) > Number(prod.stock)) {
+            return {
+                valido: false,
+                mensaje: `Stock insuficiente para "${prod.nombre}". Solicitaste ${item.cantidad} unidades, pero únicamente quedan ${prod.stock} unidad(es) disponible(s) en bodega.`,
+                limite: prod.stock,
+                productoId: prod.id
+            };
+        }
+    }
+    return { valido: true };
 };

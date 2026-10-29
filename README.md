@@ -96,8 +96,6 @@ SSH_KEY=~/.ssh/id_ed25519 ./infra/deploy.sh
 
 `deploy.sh` compila la aplicación, espera a que termine el primer arranque de la instancia, publica `dist/` y verifica que el servidor esté entregando la compilación nueva.
 
-Antes de conectarse, `deploy.sh` lee tu IP pública actual y la aplica al security group como `/32`. Las conexiones domésticas suelen ser dinámicas: si la IP cambia, SSH falla con timeout mientras HTTP sigue respondiendo. Con este paso el despliegue se recupera solo y el puerto 22 nunca queda abierto a un rango mayor que tu dirección.
-
 El estado de Terraform, `terraform.tfvars` y las llaves privadas están excluidos por `.gitignore`.
 
 ## Limitaciones conocidas
@@ -105,17 +103,6 @@ El estado de Terraform, `terraform.tfvars` y las llaves privadas están excluido
 - **Sin backend ni base de datos.** Los productos, usuarios y pedidos viven en el `localStorage`, así que cada navegador tiene su propia copia y los cambios del administrador no se comparten entre dispositivos.
 - **La autenticación no es segura.** Las credenciales se validan en el cliente y la sesión se guarda en `localStorage`. En producción requiere autenticación en el servidor (por ejemplo Spring Security con JWT).
 - **El despliegue es HTTP,** sin TLS. Sin dominio ni certificado no hay cifrado del tráfico.
-- **Las fotos de producto son de demostración.** Los tres productos destacados usan imágenes libres o de la fase 1, y el resto conserva el logo como reemplazo.
+- **Faltan imágenes en `public/img/`.** La interfaz usa un reemplazo genérico cuando no encuentra la imagen.
 
 Estas limitaciones son deliberadas para el alcance del trabajo: la aplicación demuestra el frontend y el despliegue de infraestructura, no un sistema productivo.
-
-## Créditos de imágenes
-
-| Archivo | Origen | Licencia |
-|---|---|---|
-| `public/img/Caso1.jpg`–`Caso4.webp`, `tablas.jpg`, `img_nav.PNG`, `logo.jpeg` | Fase 1 del proyecto ([Nicolasdx1/ProyectoFullStack](https://github.com/Nicolasdx1/ProyectoFullStack/tree/master/img)) | Propias del equipo |
-| `public/img/Hero.jpg` | [Unsplash](https://images.unsplash.com/photo-1547447134-cd3f5c716030), la misma foto que usa la fase 1 | Licencia Unsplash |
-| `public/img/lija.jpg` | "Skateboard upside", Cynroya, [Wikimedia Commons](https://commons.wikimedia.org/w/index.php?curid=151468909) | CC0 1.0 |
-| `public/img/polera.jpg` | "Wooden hangers with t-shirts", [rawpixel](https://www.rawpixel.com/) (vía [Openverse](https://openverse.org/)) | CC0 1.0 |
-
-Los íconos son de [Font Awesome 6.5.1](https://fontawesome.com/) (Free), cargados por CDN con hash de integridad en `index.html`.

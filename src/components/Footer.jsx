@@ -6,16 +6,8 @@ const Footer = () => {
             <div className="footer-container container">
                 <div className="footer-col brand-col">
                     <div className="footer-logo">PERFORMANCE</div>
-                    <p>
-                        <a href="https://wa.me/56973969195" target="_blank" rel="noopener noreferrer">
-                            <i className="fa-brands fa-whatsapp" aria-hidden="true"></i> Whatsapp: +56 9 7396 9195
-                        </a>
-                    </p>
-                    <p>
-                        <a href="mailto:contacto@performancesb.cl">
-                            <i className="fa-solid fa-envelope" aria-hidden="true"></i> contacto@performancesb.cl
-                        </a>
-                    </p>
+                    <p><i className="fa-brands fa-whatsapp"></i> Whatsapp: +56 9 7396 9195</p>
+                    <p><i className="fa-solid fa-envelope"></i> contacto@performancesb.cl</p>
                     <div className="social-links">
                         <a href="#!"><i className="fa-brands fa-facebook-f"></i></a>
                         <a href="#!"><i className="fa-brands fa-instagram"></i></a>

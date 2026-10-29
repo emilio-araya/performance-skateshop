@@ -12,7 +12,6 @@ const CAMPOS_LOGIN = [
 ];
 
 const CAMPOS_REGISTRO = [
-    { name: 'run', label: 'RUN (Sin puntos ni guión)', placeholder: '123456789' },
     { name: 'nombre', label: 'Nombre', placeholder: 'Tu nombre', autoComplete: 'given-name' },
     { name: 'apellidos', label: 'Apellidos', placeholder: 'Tus apellidos', autoComplete: 'family-name' },
     { name: 'email', label: 'Correo Electrónico', type: 'email', placeholder: 'ejemplo@correo.cl', autoComplete: 'email' },
@@ -25,7 +24,7 @@ const Formulario = ({ campos, valores, onChange, onSubmit, gap, textoBoton }) =>
             <Campo
                 key={campo.name}
                 {...campo}
-                value={valores[campo.name]}
+                value={valores[campo.name] || ''}
                 onChange={onChange}
             />
         ))}
@@ -36,7 +35,7 @@ const Formulario = ({ campos, valores, onChange, onSubmit, gap, textoBoton }) =>
 const Login = () => {
     const navigate = useNavigate();
     const { iniciarSesion, registrarse } = useSesion();
-    const [modo, setModo] = useState('login'); // 'login' | 'registro'
+    const [modo, setModo] = useState('login');
     const [error, setError] = useState('');
     const [loginForm, setLoginForm] = useState(LOGIN_INICIAL);
     const [regForm, setRegForm] = useState(REGISTRO_INICIAL);
@@ -114,12 +113,6 @@ const Login = () => {
                             textoBoton="Registrarme"
                         />
                     )}
-
-                    <div className="login-notes">
-                        <p className="login-notes-title">Acceso rápido para evaluación:</p>
-                        <p><strong>Admin:</strong> admin@performance.cl / admin123</p>
-                        <p><strong>Cliente:</strong> Crea una cuenta en "Crear Cuenta".</p>
-                    </div>
                 </div>
             </div>
         </main>

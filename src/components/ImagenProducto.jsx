@@ -1,16 +1,19 @@
-const IMAGEN_RESPALDO = '/img/sin-imagen.svg';
+import React from 'react';
 
-// Product image that falls back to a neutral placeholder when the file is
-// missing, instead of letting the browser render the alt text in its place.
-const ImagenProducto = ({ src, alt, ...props }) => {
-    const usarRespaldo = (e) => {
-        // Guard against an endless error loop if the fallback is missing too.
-        if (!e.currentTarget.src.endsWith(IMAGEN_RESPALDO)) {
-            e.currentTarget.src = IMAGEN_RESPALDO;
-        }
-    };
+const IMAGEN_DEFAULT = "/img/sin-imagen.svg";
 
-    return <img src={src || IMAGEN_RESPALDO} alt={alt} onError={usarRespaldo} {...props} />;
+const ImagenProducto = ({ src, alt, className }) => {
+    return (
+        <img 
+            src={src || IMAGEN_DEFAULT} 
+            alt={alt || "Imagen de producto"} 
+            className={className || "product-img"}
+            onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = IMAGEN_DEFAULT;
+            }}
+        />
+    );
 };
 
 export default ImagenProducto;

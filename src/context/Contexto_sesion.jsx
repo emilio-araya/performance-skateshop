@@ -1,6 +1,27 @@
 import { createContext, useContext, useState } from 'react';
 import { crearCuenta, validarCredenciales } from '../services/auth';
 
+// --- POLYFILL LOCALSTORAGE PARA AMBIENTE DE TEST (NODE 22) ---
+if (typeof globalThis !== 'undefined') {
+    try {
+        if (!globalThis.localStorage || typeof globalThis.localStorage.getItem !== 'function') {
+            const store = new Map();
+            Object.defineProperty(globalThis, 'localStorage', {
+                value: {
+                    getItem: (k) => store.get(String(k)) ?? null,
+                    setItem: (k, v) => store.set(String(k), String(v)),
+                    removeItem: (k) => store.delete(String(k)),
+                    clear: () => store.clear(),
+                    key: (i) => Array.from(store.keys())[i] ?? null,
+                    get length() { return store.size; }
+                },
+                writable: true,
+                configurable: true
+            });
+        }
+    } catch (e) {}
+}
+
 const CLAVE_SESION = 'usuario_logueado';
 
 const SesionContext = createContext(null);
@@ -14,13 +35,9 @@ const leerSesionGuardada = () => {
     }
 };
 
-// Single source of truth for the logged-in user. It exposes intents
-// (log in, sign up, log out) instead of a raw setter, so a session can only
-// be opened through a successful credential check.
 export const ProveedorSesion = ({ children }) => {
     const [usuario, setUsuario] = useState(leerSesionGuardada);
 
-    // Opens the session only when the credential check succeeded.
     const abrirSiOk = (resultado) => {
         if (resultado.ok) {
             localStorage.setItem(CLAVE_SESION, JSON.stringify(resultado.usuario));

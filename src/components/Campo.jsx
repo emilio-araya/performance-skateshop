@@ -1,13 +1,19 @@
-// Campo de texto con su label vinculado (htmlFor/id) para que
-// lectores de pantalla y Testing Library puedan encontrar el control.
-import { useId } from 'react';
+import React, { useId } from 'react';
 
-const Campo = ({ label, type = 'text', className, ...inputProps }) => {
-    const id = useId();
+const Campo = ({ label, type = 'text', className = '', id: customId, name, required, ...inputProps }) => {
+    const generatedId = useId();
+    const fieldId = customId || name || generatedId;
+
     return (
         <div className={`form-group ${className}`}>
-            <label htmlFor={id}>{label}</label>
-            <input id={id} type={type} required {...inputProps} />
+            {label && <label htmlFor={fieldId}>{label}</label>}
+            <input 
+                id={fieldId} 
+                name={name} 
+                type={type} 
+                {...(required !== undefined ? { required } : {})}
+                {...inputProps} 
+            />
         </div>
     );
 };
