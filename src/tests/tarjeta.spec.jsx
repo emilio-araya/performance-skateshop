@@ -9,7 +9,7 @@ it('product card shows the placeholder image instead of the alt text when the im
         <ProveedorCarrito>
             <MemoryRouter>
                 <TarjetaProducto producto={{
-                    id: 'lija-premium-black', nombre: 'Lija Premium Black', categoria: 'Hardwares',
+                    id: 'lija-premium-black', nombre: 'Lija Premium Black', categoria: 'Accesorios',
                     precio: 8900, stock: 12, imagen: '/img/logo.jpeg', oferta: true
                 }} />
             </MemoryRouter>

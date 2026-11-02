@@ -47,7 +47,7 @@ const PRODUCTOS_DEMO = [
     {
         id: "lija-premium-black",
         nombre: "Lija Premium Black",
-        categoria: "Hardwares",
+        categoria: "Accesorios",
         precio: 8900,
         stock: 11, // Stock > 5 para no ser considerado critico
         imagen: "/img/productos/lija-premium-black.jpg",
@@ -75,7 +75,20 @@ const USUARIOS_DEMO = [
     }
 ];
 
-const CATEGORIAS_DEMO = ["Tablas", "Poleras y Polerones", "Hardwares", "Accesorios"];
+const CATEGORIAS_DEMO = ["Tablas", "Poleras y Polerones", "Accesorios"];
+
+// "Hardwares" was merged into "Accesorios". Browsers that visited an earlier
+// version still have it saved in localStorage.
+const CATEGORIA_ANTERIOR = "Hardwares";
+const CATEGORIA_ACTUAL = "Accesorios";
+
+const moverCategoria = (producto) =>
+    producto.categoria === CATEGORIA_ANTERIOR ? { ...producto, categoria: CATEGORIA_ACTUAL } : producto;
+
+const unificarCategorias = (categorias) => {
+    const nombres = categorias.map(c => (c === CATEGORIA_ANTERIOR ? CATEGORIA_ACTUAL : c));
+    return [...new Set(nombres)];
+};
 
 // --- PRODUCTOS ---
 // Images that earlier versions saved for the demo products. Browsers that
@@ -97,7 +110,7 @@ export const getProductos = () => {
         localStorage.setItem("admin_productos", JSON.stringify(PRODUCTOS_DEMO));
         return [...PRODUCTOS_DEMO];
     }
-    const productos = JSON.parse(data).map(asignarImagenDemo);
+    const productos = JSON.parse(data).map(moverCategoria).map(asignarImagenDemo);
     localStorage.setItem("admin_productos", JSON.stringify(productos));
     return productos;
 };
@@ -144,7 +157,9 @@ export const getCategorias = () => {
         localStorage.setItem("admin_categorias", JSON.stringify(CATEGORIAS_DEMO));
         return [...CATEGORIAS_DEMO];
     }
-    return JSON.parse(data);
+    const categorias = unificarCategorias(JSON.parse(data));
+    localStorage.setItem("admin_categorias", JSON.stringify(categorias));
+    return categorias;
 };
 
 export const guardarCategoria = (nombre) => {

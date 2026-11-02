@@ -28,7 +28,7 @@ const Footer = () => {
                     <h4>Categorías</h4>
                     <ul>
                         <li><a href="#!">Skateboard</a></li>
-                        <li><a href="#!">Hardwares</a></li>
+                        <li><a href="#!">Accesorios</a></li>
                         <li><a href="#!">Poleras y Polerones</a></li>
                     </ul>
                 </div>

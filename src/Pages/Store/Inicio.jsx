@@ -58,7 +58,7 @@ const Inicio = () => {
                         <button className={`cat-btn ${categoriaSel === 'todo' ? 'active' : ''}`} onClick={() => setCategoriaSel('todo')}>Todo</button>
                         <button className={`cat-btn ${categoriaSel === 'Tablas' ? 'active' : ''}`} onClick={() => setCategoriaSel('Tablas')}>Tablas</button>
                         <button className={`cat-btn ${categoriaSel === 'Poleras y Polerones' ? 'active' : ''}`} onClick={() => setCategoriaSel('Poleras y Polerones')}>Poleras y Polerones</button>
-                        <button className={`cat-btn ${categoriaSel === 'Hardwares' ? 'active' : ''}`} onClick={() => setCategoriaSel('Hardwares')}>Hardwares</button>
+                        <button className={`cat-btn ${categoriaSel === 'Accesorios' ? 'active' : ''}`} onClick={() => setCategoriaSel('Accesorios')}>Accesorios</button>
                     </div>
 
                     <div className="products-grid">
