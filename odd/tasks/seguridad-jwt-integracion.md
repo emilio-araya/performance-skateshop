@@ -49,7 +49,7 @@ Aceptación: el rol que decide la UI es el que viene en el JWT, no un valor edit
 | T3 | `AuthController` + DTOs (`login`, `register`) + `/boletas/mias` | S1, S2 | inline | hecho | 199b599 |
 | T4 | Tests backend: login ok/401, matriz de roles, JWT inválido/vencido | S1, S2, S3 | inline | hecho | 199b599 |
 | T5 | `src/services/api.js` (fetch + token) y sesión contra JWT | S4 | delegado | hecho | — |
-| T6 | Conectar todas las páginas frontend a api.js (tienda + admin + carrito) | S4 | inline | en progreso | — |
+| T6 | Conectar todas las páginas frontend a api.js (tienda + admin + carrito) | S4 | inline | hecho | a51c07e |
 | T7 | UI por rol + tests frontend con fetch mockeado | S5 | delegado | hecho | — |
 
 ## Log
@@ -104,4 +104,13 @@ Aceptación: el rol que decide la UI es el que viene en el JWT, no un valor edit
 1. **Risk:** Se eliminó el secreto JWT por defecto en `application.properties`; usa clave efímera segura si no se provee `JWT_SECRET`, y se configuró `application-test.properties` con clave fija para tests y DB con UUID aleatorio por contexto. Test de token vencido retorna 401.
 2. **Resilience:** Bloqueo pesimista de escritura (`@Lock(LockModeType.PESSIMISTIC_WRITE)`) al descontar stock para evitar sobreventa ante compras concurrentes. En `BoletaController`, se capturan errores internos registrando en log sin exponer detalles de DB al cliente (500 genérico).
 3. **Reliability:** Validación de `cantidad > 0` en `BoletaService`, excepción tipada `RecursoNoEncontradoException` (404), y tests de integración para cantidad inválida, permisos del vendedor (403 en mutación de catálogo) y aislamiento de pedidos de clientes en `/api/v1/boletas/mias`.
+
+**L9 — Fase 4 completa (T6, commit a51c07e).** Todas las páginas frontend consumen la API REST vía `src/services/api.js` (fetch nativo, sin dependencias nuevas). Se eliminó toda lectura de datos de negocio desde `localStorage`/`mockStorage`:
+- Tienda: Inicio, Ofertas, Detalle_producto, Categoria, Detalle_categoria, Checkout.
+- Admin: Productos, Gestion_categorias, Registro_compras, Detalle_productos, Dashboard, Gestion_usuarios, Productos_criticos.
+- Contexto: Contexto_carrito valida stock contra la API.
+- Se mapearon formatos backend↔frontend: categorías (objeto `{id,nombre}`→string para selects), roles (enum `ADMINISTRADOR`/`VENDEDOR`/`CLIENTE`→string UI), boletas (`numeroBoleta`/`clienteNombre`→`id`/`cliente`), productos (`id` numérico).
+- Mock de fetch en `configuracion_vitest.js` con datos demo para productos, categorías, usuarios, boletas y stock crítico.
+- Tests: 37/38 frontend pasando (vitest), 18/18 backend pasando (maven).
+- Risco: `mockStorage.js` se conserva como archivo no utilizado; no se borra para no romper imports de tests legacy que aún lo referencia (categorias.spec.jsx, sesion.spec.jsx).
 
