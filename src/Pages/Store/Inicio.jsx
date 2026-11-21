@@ -1,20 +1,65 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getProductos } from '../../services/mockStorage';
+import { getProductos } from '../../services/api';
 import TarjetaProducto from '../../components/TarjetaProducto';
 
 const Inicio = () => {
     const [productos, setProductos] = useState([]);
     const [categoriaSel, setCategoriaSel] = useState("todo");
+    const [cargando, setCargando] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
-        setProductos(getProductos());
+        cargarDatos();
     }, []);
+
+    const cargarDatos = async () => {
+        try {
+            setCargando(true);
+            const lista = await getProductos();
+            setProductos(lista || []);
+        } catch (err) {
+            setError('No se pudieron cargar los productos.');
+            console.error(err);
+        } finally {
+            setCargando(false);
+        }
+    };
 
     const productosFiltrados = productos.filter(p => {
         if (categoriaSel === "todo") return true;
         return p.categoria.toLowerCase().trim() === categoriaSel.toLowerCase().trim();
     });
+
+    if (cargando) {
+        return (
+            <main>
+                <section id="inicio">
+                    <div className="hero-content">
+                        <h1>Bienvenidos a Performancesb.cl</h1>
+                        <p>El mejor hardware, tablas y estilo urbano en un solo lugar.</p>
+                        <a href="#tienda" className="btn-main">Ver productos</a>
+                    </div>
+                </section>
+                <section id="tienda" style={{ textAlign: 'center', paddingTop: '60px' }}>Cargando productos...</section>
+            </main>
+        );
+    }
+
+    if (error) {
+        return (
+            <main>
+                <section id="inicio">
+                    <div className="hero-content">
+                        <h1>Bienvenidos a Performancesb.cl</h1>
+                        <p>El mejor hardware, tablas y estilo urbano en un solo lugar.</p>
+                        <a href="#tienda" className="btn-main">Ver productos</a>
+                    </div>
+                </section>
+                <section id="tienda" style={{ textAlign: 'center', paddingTop: '60px', color: '#ff4a57' }}>{error}</section>
+            </main>
+        );
+    }
 
     return (
         <main>

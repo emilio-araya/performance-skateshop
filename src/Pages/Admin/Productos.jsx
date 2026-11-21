@@ -3,12 +3,14 @@ import { Link } from 'react-router-dom';
 import SidebarAdmin from '../../components/SidebarAdmin';
 import Campo from '../../components/Campo';
 import ImagenProducto from '../../components/ImagenProducto';
-import { getProductos, guardarProducto, eliminarProducto, getCategorias } from '../../services/mockStorage';
+import { getProductos, crearProducto, actualizarProducto, eliminarProducto, getCategorias } from '../../services/api';
 import '../../assets/styles/admin.css';
 
 const Productos = () => {
     const [productos, setProductos] = useState([]);
     const [categorias, setCategorias] = useState([]);
+    const [cargando, setCargando] = useState(true);
+    const [error, setError] = useState(null);
     const [modalActivo, setModalActivo] = useState(false);
     const [form, setForm] = useState({ id: '', nombre: '', categoria: '', precio: 0, stock: 10, imagen: '' });
     const [idEditando, setIdEditando] = useState(null);
@@ -17,44 +19,100 @@ const Productos = () => {
         cargarDatos();
     }, []);
 
-    const cargarDatos = () => {
-        setProductos(getProductos());
-        const cats = getCategorias();
-        setCategorias(cats);
-        if (cats.length > 0 && !form.categoria) {
-            setForm(prev => ({ ...prev, categoria: cats[0] }));
+    const cargarDatos = async () => {
+        try {
+            setCargando(true);
+            const [listaProductos, listaCategorias] = await Promise.all([getProductos(), getCategorias()]);
+            setProductos(listaProductos || []);
+            setCategorias(listaCategorias || []);
+            if ((listaCategorias || []).length > 0 && !form.categoria) {
+                setForm(prev => ({ ...prev, categoria: String((listaCategorias || [])[0].id) }));
+            }
+        } catch (err) {
+            setError('No se pudieron cargar los productos y categorías.');
+            console.error(err);
+        } finally {
+            setCargando(false);
         }
     };
 
     const abrirModalNuevo = () => {
-        setForm({ id: '', nombre: '', categoria: categorias[0] || 'Tablas', precio: 0, stock: 10, imagen: '' });
+        setForm({ id: '', nombre: '', categoria: categorias.length > 0 ? String(categorias[0].id) : '', precio: 0, stock: 10, imagen: '' });
         setIdEditando(null);
         setModalActivo(true);
     };
 
     const abrirModalEditar = (prod) => {
-        setForm(prod);
+        setForm({
+            id: String(prod.id || ''),
+            nombre: prod.nombre || '',
+            categoria: prod.categoria ? String(prod.categoria.id || prod.categoria) : '',
+            precio: Number(prod.precio || 0),
+            stock: Number(prod.stock || 0),
+            imagen: prod.imagen || ''
+        });
         setIdEditando(prod.id);
         setModalActivo(true);
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        guardarProducto({
-            ...form,
+        const payload = {
+            nombre: form.nombre,
+            categoria: { id: Number(form.categoria) },
             precio: Number(form.precio),
-            stock: Number(form.stock)
-        });
-        setModalActivo(false);
-        cargarDatos();
-    };
-
-    const handleEliminar = (id) => {
-        if (window.confirm(`¿Seguro que deseas eliminar el producto ID: ${id}?`)) {
-            eliminarProducto(id);
-            cargarDatos();
+            stock: Number(form.stock),
+            imagen: form.imagen
+        };
+        try {
+            if (idEditando) {
+                await actualizarProducto(idEditando, payload);
+            } else {
+                await crearProducto(payload);
+            }
+            setModalActivo(false);
+            await cargarDatos();
+        } catch (err) {
+            setError('No se pudo guardar el producto.');
+            console.error(err);
         }
     };
+
+    const handleEliminar = async (id) => {
+        if (window.confirm(`¿Seguro que deseas eliminar el producto ID: ${id}?`)) {
+            try {
+                await eliminarProducto(id);
+                await cargarDatos();
+            } catch (err) {
+                setError('No se pudo eliminar el producto.');
+                console.error(err);
+            }
+        }
+    };
+
+    if (cargando) {
+        return (
+            <div className="admin-body">
+                <SidebarAdmin />
+                <main className="admin-main">
+                    <header className="admin-header"><h1>Gestión de Productos</h1></header>
+                    <div className="admin-container" style={{ textAlign: 'center', paddingTop: '60px' }}>Cargando productos...</div>
+                </main>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="admin-body">
+                <SidebarAdmin />
+                <main className="admin-main">
+                    <header className="admin-header"><h1>Gestión de Productos</h1></header>
+                    <div className="admin-container" style={{ textAlign: 'center', paddingTop: '60px', color: '#ff4a57' }}>{error}</div>
+                </main>
+            </div>
+        );
+    }
 
     return (
         <div className="admin-body">
@@ -93,7 +151,7 @@ const Productos = () => {
                                                 {p.nombre}
                                             </Link>
                                         </td>
-                                        <td><span className="badge-admin">{p.categoria}</span></td>
+                                        <td><span className="badge-admin">{p.categoria ? (typeof p.categoria === 'string' ? p.categoria : p.categoria.nombre) : '-'}</span></td>
                                         <td>${Number(p.precio).toLocaleString("es-CL")}</td>
                                         <td>{p.stock} un.</td>
                                         <td>
@@ -111,7 +169,6 @@ const Productos = () => {
                     </div>
                 </div>
 
-                {/* Modal de Producto con las mismas clases de Gestión de Usuarios */}
                 {modalActivo && (
                     <div className="modal-overlay active">
                         <div className="modal-box user-form-card">
@@ -148,7 +205,9 @@ const Productos = () => {
                                             onChange={e => setForm({ ...form, categoria: e.target.value })}
                                         >
                                             {categorias.map((c, idx) => (
-                                                <option key={idx} value={c}>{c}</option>
+                                                <option key={c.id || idx} value={c.id}>
+                                                    {c.nombre}
+                                                </option>
                                             ))}
                                         </select>
                                     </div>

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCarrito } from '../../context/Contexto_carrito';
 import { useSesion } from '../../context/Contexto_sesion';
 import Campo from '../../components/Campo';
-import { registrarPedido, descontarStock, getProductos } from '../../services/mockStorage';
+import { crearBoleta, getProductos } from '../../services/api';
 import '../../assets/styles/carrito.css';
 
 const IMAGEN_DEFAULT = "https://images.unsplash.com/photo-1520045892732-304bc3ac5d8e?auto=format&fit=crop&w=300&q=80";
@@ -14,6 +14,7 @@ const Checkout = () => {
     const { usuario } = useSesion();
 
     const [errorStock, setErrorStock] = useState(null);
+    const [procesando, setProcesando] = useState(false);
 
     const [form, setForm] = useState({
         nombre: usuario?.nombre || '',
@@ -47,65 +48,82 @@ const Checkout = () => {
         return camposRequeridos.find(campo => !form[campo] || String(form[campo]).trim() === '');
     };
 
-    const simularPago = (exitoso) => {
+    const procesarCompra = async (exitoso) => {
         setErrorStock(null);
+        setProcesando(true);
 
-        if (carrito.length === 0) {
-            alert("El carrito está vacío.");
-            return;
-        }
+        try {
+            if (carrito.length === 0) {
+                alert("El carrito está vacío.");
+                return;
+            }
 
-        const campoFaltante = validarFormulario();
-        if (campoFaltante) {
-            alert(`Completa el campo "${campoFaltante}" antes de pagar.`);
-            return;
-        }
+            const campoFaltante = validarFormulario();
+            if (campoFaltante) {
+                alert(`Completa el campo "${campoFaltante}" antes de pagar.`);
+                return;
+            }
 
-        // Validar inventario solo si el producto existe en el catálogo registrado
-        const productosBodega = getProductos();
-        let mensajeError = null;
+            // Validar inventario contra el catálogo de la API
+            const productosBodega = await getProductos();
+            let mensajeError = null;
 
-        for (const item of carrito) {
-            const prodBodega = productosBodega.find(p => p.id === item.id);
-            if (prodBodega) {
-                const stockDisponible = Number(prodBodega.stock);
-                if (Number(item.cantidad) > stockDisponible) {
-                    mensajeError = `Stock insuficiente para "${item.nombre}". Solicitaste ${item.cantidad} unidad(es), pero únicamente quedan ${stockDisponible} unidad(es) disponible(s) en bodega.`;
-                    break;
+            for (const item of carrito) {
+                const prodBodega = productosBodega.find(p => Number(p.id) === Number(item.id));
+                if (prodBodega) {
+                    const stockDisponible = Number(prodBodega.stock);
+                    if (Number(item.cantidad) > stockDisponible) {
+                        mensajeError = `Stock insuficiente para "${item.nombre}". Solicitaste ${item.cantidad} unidad(es), pero únicamente quedan ${stockDisponible} unidad(es) disponible(s) en bodega.`;
+                        break;
+                    }
                 }
             }
-        }
 
-        if (mensajeError) {
-            setErrorStock(mensajeError);
-            return;
-        }
+            if (mensajeError) {
+                setErrorStock(mensajeError);
+                return;
+            }
 
-        const contador = parseInt(localStorage.getItem('contador_pedidos') || '0', 10) + 1;
-        localStorage.setItem('contador_pedidos', String(contador));
-        const orderId = `pedido-${contador}`;
-        const resumen = carrito.map(i => `${i.cantidad}x ${i.nombre}`).join(', ');
+            const items = carrito.map(i => ({
+                productoId: Number(i.id),
+                cantidad: Number(i.cantidad)
+            }));
 
-        const nuevoPedido = {
-            id: orderId,
-            fecha: new Date().toLocaleDateString("es-CL"),
-            cliente: `${form.nombre} ${form.apellidos}`,
-            correo: form.correo,
-            direccion: `${form.calle}, ${form.comuna}, ${form.region}`,
-            resumenItems: resumen,
-            total: Number(totalPagar || 0),
-            items: carrito,
-            estado: exitoso ? "Aprobado" : "Rechazado"
-        };
+            const boletaDto = {
+                nombre: form.nombre,
+                apellidos: form.apellidos,
+                correo: form.correo,
+                direccion: `${form.calle}, ${form.comuna}, ${form.region}`,
+                indicaciones: form.indicaciones,
+                items
+            };
 
-        registrarPedido(nuevoPedido);
+            const creada = await crearBoleta(boletaDto);
 
-        if (exitoso) {
-            descontarStock(carrito);
-            vaciarCarrito();
-            navigate('/pago-correcto', { state: nuevoPedido });
-        } else {
-            navigate('/pago-error', { state: nuevoPedido });
+            const resumen = carrito.map(i => `${i.cantidad}x ${i.nombre}`).join(', ');
+            const nuevoPedido = {
+                id: creada.numeroBoleta || creada.id,
+                fecha: creada.fecha || new Date().toLocaleDateString("es-CL"),
+                cliente: creada.clienteNombre || `${form.nombre} ${form.apellidos}`,
+                correo: creada.clienteEmail || form.correo,
+                direccion: creada.direccionEnvio || `${form.calle}, ${form.comuna}, ${form.region}`,
+                resumenItems: resumen,
+                total: creada.total || Number(totalPagar || 0),
+                items: carrito,
+                estado: exitoso ? "Aprobado" : "Rechazado"
+            };
+
+            if (exitoso) {
+                vaciarCarrito();
+                navigate('/pago-correcto', { state: nuevoPedido });
+            } else {
+                navigate('/pago-error', { state: nuevoPedido });
+            }
+        } catch (err) {
+            setErrorStock(err.message || 'No se pudo procesar la compra. Intentalo nuevamente.');
+            console.error(err);
+        } finally {
+            setProcesando(false);
         }
     };
 
@@ -114,7 +132,7 @@ const Checkout = () => {
             <h1 className="section-title">Carrito de Compra</h1>
 
             {errorStock && (
-                <div style={{
+                <div role="alert" style={{
                     backgroundColor: 'rgba(255, 74, 87, 0.15)',
                     border: '1px solid #ff4a57',
                     color: '#ff4a57',
@@ -217,10 +235,10 @@ const Checkout = () => {
                         </div>
 
                         <div className="payment-buttons-wrapper">
-                            <button type="button" className="btn-pay-success" onClick={() => simularPago(true)}>
-                                Simular Pago Exitoso
+                            <button type="button" className="btn-pay-success" onClick={() => procesarCompra(true)} disabled={procesando}>
+                                {procesando ? 'Procesando...' : 'Simular Pago Exitoso'}
                             </button>
-                            <button type="button" className="btn-pay-error" onClick={() => simularPago(false)}>
+                            <button type="button" className="btn-pay-error" onClick={() => procesarCompra(false)} disabled={procesando}>
                                 Simular Pago con Error
                             </button>
                         </div>

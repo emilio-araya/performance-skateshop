@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { render, screen, fireEvent, within, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import ProductosCriticos from '../Pages/Admin/Productos_criticos';
 
@@ -12,8 +12,9 @@ const renderCriticos = () => render(
 describe('Admin - Productos críticos', () => {
     beforeEach(() => localStorage.clear());
 
-    it('lists only products with stock <= 5', () => {
+    it('lists only products with stock <= 5', async () => {
         renderCriticos();
+        await waitFor(() => screen.getByRole('table'));
         const tabla = screen.getByRole('table');
 
         expect(within(tabla).getByText('Tabla Maple Pro 8.25')).toBeTruthy();
@@ -21,8 +22,9 @@ describe('Admin - Productos críticos', () => {
         expect(within(tabla).queryByText('Lija Premium Black')).toBeNull();
     });
 
-    it('shows a placeholder image instead of the alt text when the image fails to load', () => {
+    it('shows a placeholder image instead of the alt text when the image fails to load', async () => {
         renderCriticos();
+        await waitFor(() => screen.getByRole('img', { name: 'Tabla Maple Pro 8.25' }));
         const imagen = screen.getByRole('img', { name: 'Tabla Maple Pro 8.25' });
 
         fireEvent.error(imagen);

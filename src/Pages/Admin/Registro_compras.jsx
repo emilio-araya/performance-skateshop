@@ -1,10 +1,62 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import SidebarAdmin from '../../components/SidebarAdmin';
-import { getPedidos } from '../../services/mockStorage';
+import { getBoletas } from '../../services/api';
 import '../../assets/styles/admin.css';
 
 const RegistroCompras = () => {
-    const [pedidos] = useState(() => getPedidos());
+    const [pedidos, setPedidos] = useState([]);
+    const [cargando, setCargando] = useState(true);
+    const [error, setError] = useState(null);
+
+    const cargarDatos = async () => {
+        try {
+            setCargando(true);
+            const boletas = await getBoletas();
+            const mapeados = (boletas || []).map(p => ({
+                id: p.numeroBoleta || p.id,
+                fecha: p.fecha,
+                cliente: p.clienteNombre || p.cliente,
+                correo: p.clienteEmail || p.correo,
+                resumenItems: (p.detalles || []).map(d => `${d.cantidad}x ${d.productoNombre || d.producto?.nombre || 'Producto'}`).join(', '),
+                total: p.total,
+                estado: p.estado
+            }));
+            setPedidos(mapeados);
+        } catch (err) {
+            setError('No se pudieron cargar las boletas.');
+            console.error(err);
+        } finally {
+            setCargando(false);
+        }
+    };
+
+    useEffect(() => {
+        cargarDatos();
+    }, []);
+
+    if (cargando) {
+        return (
+            <div className="admin-body">
+                <SidebarAdmin />
+                <main className="admin-main">
+                    <header className="admin-header"><h1>Historial de Compras y Boletas</h1></header>
+                    <div className="admin-container" style={{ textAlign: 'center', paddingTop: '60px' }}>Cargando compras...</div>
+                </main>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="admin-body">
+                <SidebarAdmin />
+                <main className="admin-main">
+                    <header className="admin-header"><h1>Historial de Compras y Boletas</h1></header>
+                    <div className="admin-container" style={{ textAlign: 'center', paddingTop: '60px', color: '#ff4a57' }}>{error}</div>
+                </main>
+            </div>
+        );
+    }
 
     return (
         <div className="admin-body">
@@ -45,8 +97,8 @@ const RegistroCompras = () => {
                                                     style={{ 
                                                         backgroundColor: p.estado === 'Aprobado' ? 'rgba(37, 211, 102, 0.2)' : 'rgba(255, 74, 87, 0.2)',
                                                         color: p.estado === 'Aprobado' ? '#25d366' : '#ff4a57',
-                                                        border: `1px solid ${p.estado === 'Aprobado' ? '#25d366' : '#ff4a57'}`,
-                                                        padding: '4px 10px',
+                                                        border: `1px solid ${p.estado === 'Aprobado' ? '#25d366' : '#ff4a57'}`, 
+                                                        padding: '4px 10px', 
                                                         borderRadius: '4px',
                                                         fontWeight: 'bold',
                                                         fontSize: '0.8rem'

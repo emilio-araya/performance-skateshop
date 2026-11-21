@@ -1,35 +1,16 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { getProductos } from '../services/mockStorage';
-
-// --- POLYFILL LOCALSTORAGE PARA AMBIENTE DE TEST (NODE 22) ---
-if (typeof globalThis !== 'undefined') {
-    try {
-        if (!globalThis.localStorage || typeof globalThis.localStorage.getItem !== 'function') {
-            const store = new Map();
-            Object.defineProperty(globalThis, 'localStorage', {
-                value: {
-                    getItem: (k) => store.get(String(k)) ?? null,
-                    setItem: (k, v) => store.set(String(k), String(v)),
-                    removeItem: (k) => store.delete(String(k)),
-                    clear: () => store.clear(),
-                    key: (i) => Array.from(store.keys())[i] ?? null,
-                    get length() { return store.size; }
-                },
-                writable: true,
-                configurable: true
-            });
-        }
-    } catch (e) {}
-}
+import { getProductos } from '../services/api';
 
 const CarritoContext = createContext();
 
 export const ProveedorCarrito = ({ children }) => {
-    // 1. Lectura segura desde localStorage
+    // 1. Lectura segura desde localStorage (IDs normalizados a Number)
     const [carrito, setCarrito] = useState(() => {
         try {
             const guardado = localStorage.getItem('carrito');
-            return guardado ? JSON.parse(guardado) : [];
+            return guardado
+                ? JSON.parse(guardado).map(item => ({ ...item, id: Number(item.id) }))
+                : [];
         } catch (error) {
             console.error("Error al leer el carrito desde localStorage:", error);
             return [];
@@ -45,17 +26,16 @@ export const ProveedorCarrito = ({ children }) => {
         }
     }, [carrito]);
 
-    // 3. Agregar productos con validación estricta de stock
-    const agregarAlCarrito = (producto, cantidadAgregar = 1) => {
-        const productosBodega = getProductos();
-        const prodBodega = productosBodega.find(p => p.id === producto.id);
+    // 3. Agregar productos con validación de stock contra la API
+    const agregarAlCarrito = async (producto, cantidadAgregar = 1) => {
+        const productosBodega = await getProductos();
+        const prodBodega = productosBodega.find(p => Number(p.id) === Number(producto.id));
         const stockDisponible = prodBodega ? Number(prodBodega.stock) : Number(producto.stock || 0);
 
         const itemExistente = carrito.find(item => item.id === producto.id);
         const cantidadActual = itemExistente ? itemExistente.cantidad : 0;
         const nuevaCantidadTotal = cantidadActual + cantidadAgregar;
 
-        // Si la cantidad total supera el stock existente, se bloquea la acción
         if (nuevaCantidadTotal > stockDisponible) {
             alert(`Stock insuficiente para "${producto.nombre}". Solicitaste ${nuevaCantidadTotal} unidad(es), pero la cantidad límite disponible en bodega es ${stockDisponible} unidad(es).`);
             return false;
@@ -65,12 +45,12 @@ export const ProveedorCarrito = ({ children }) => {
             const existe = prev.find(item => item.id === producto.id);
             if (existe) {
                 return prev.map(item =>
-                    item.id === producto.id 
-                        ? { ...item, cantidad: nuevaCantidadTotal } 
+                    item.id === producto.id
+                        ? { ...item, cantidad: nuevaCantidadTotal }
                         : item
                 );
             }
-            return [...prev, { ...producto, cantidad: cantidadAgregar }];
+            return [...prev, { ...producto, id: Number(producto.id), cantidad: cantidadAgregar }];
         });
         return true;
     };
@@ -107,7 +87,6 @@ export const ProveedorCarrito = ({ children }) => {
             vaciarCarrito,
             totalProductos,
             totalPagar,
-            // Aliases de compatibilidad para Navbar y Checkout
             cantidadTotal: totalProductos,
             precioTotal: totalPagar
         }}>
@@ -122,7 +101,7 @@ export const useCarrito = () => {
     if (!contexto) {
         return {
             carrito: [],
-            agregarAlCarrito: () => {},
+            agregarAlCarrito: async () => false,
             disminuirCantidad: () => {},
             eliminarDelCarrito: () => {},
             vaciarCarrito: () => {},
