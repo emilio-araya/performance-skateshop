@@ -1,17 +1,11 @@
-import { it, expect, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { it, expect, beforeEach, vi } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { ProveedorSesion } from '../context/Contexto_sesion';
 import { ProveedorCarrito } from '../context/Contexto_carrito';
-import { getProductos, guardarProducto, getPedidos } from '../services/mockStorage';
 import Checkout from '../Pages/Store/Checkout';
 
-beforeEach(() => {
-    localStorage.clear();
-    localStorage.setItem('carrito', JSON.stringify([
-        { id: 'p1', nombre: 'Tabla', precio: 1000, imagen: '', cantidad: 1 }
-    ]));
-});
+const mockFetch = vi.spyOn(globalThis, 'fetch');
 
 const renderCheckout = () => render(
     <ProveedorSesion>
@@ -23,59 +17,106 @@ const renderCheckout = () => render(
     </ProveedorSesion>
 );
 
-it('lets the customer type the comuna and saves it in the order address', () => {
-    renderCheckout();
-    const comuna = screen.getByLabelText('Comuna');
-    expect(comuna.value).toBe('');
+const mockProductos = (productos = [{ id: 1, nombre: 'Tabla', precio: 1000, stock: 10, imagen: '', categoria: 'Tablas', oferta: false }]) => {
+    mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => productos
+    });
+};
 
+const mockBoletaCreada = (respuesta = {
+    numeroBoleta: 'BOL-0001',
+    fecha: '20/11/2026',
+    clienteNombre: 'Ana Pérez',
+    clienteEmail: 'ana@correo.cl',
+    direccionEnvio: 'Av. Siempre Viva 123, Maipú, Región Metropolitana de Santiago',
+    total: 1000,
+    estado: 'PAGADO'
+}) => {
+    mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 201,
+        json: async () => respuesta
+    });
+};
+
+beforeEach(() => {
+    localStorage.clear();
+    localStorage.setItem('carrito', JSON.stringify([
+        { id: 1, nombre: 'Tabla', precio: 1000, imagen: '', cantidad: 1 }
+    ]));
+    mockFetch.mockReset();
+});
+
+it('lets the customer type the comuna and sends the order to the API', async () => {
+    mockProductos();
+    mockBoletaCreada();
+
+    renderCheckout();
     fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Ana' } });
     fireEvent.change(screen.getByLabelText('Apellidos'), { target: { value: 'Pérez' } });
     fireEvent.change(screen.getByLabelText('Correo'), { target: { value: 'ana@correo.cl' } });
     fireEvent.change(screen.getByLabelText('Calle y Número'), { target: { value: 'Av. Siempre Viva 123' } });
-    fireEvent.change(comuna, { target: { value: 'Maipú' } });
+    fireEvent.change(screen.getByLabelText('Comuna'), { target: { value: 'Maipú' } });
     fireEvent.click(screen.getByRole('button', { name: 'Simular Pago Exitoso' }));
 
-    const [pedido] = getPedidos();
-    expect(pedido.direccion).toContain('Maipú');
-    expect(pedido.direccion).not.toContain('Cerrillos');
+    await waitFor(() => expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/boletas'),
+        expect.objectContaining({ method: 'POST' })
+    ));
+
+    const llamadasPost = mockFetch.mock.calls.filter(([url]) => String(url).includes('/api/v1/boletas'));
+    expect(llamadasPost.length).toBe(1);
+    const cuerpo = JSON.stringify(JSON.parse(llamadasPost[0][1].body));
+    expect(cuerpo).toContain('Maipú');
+    expect(cuerpo).not.toContain('Cerrillos');
 });
 
-it('does not allow purchase with empty name', () => {
+it('does not allow purchase with empty name', async () => {
+    mockProductos();
+
     renderCheckout();
     fireEvent.click(screen.getByRole('button', { name: 'Simular Pago Exitoso' }));
 
-    expect(getPedidos()).toEqual([]);
+    await waitFor(() => expect(mockFetch).not.toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/boletas'),
+        expect.objectContaining({ method: 'POST' })
+    ));
 });
 
-it('does not allow purchase with empty street', () => {
+it('does not allow purchase with empty street', async () => {
+    mockProductos();
+
     renderCheckout();
     fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Ana' } });
     fireEvent.click(screen.getByRole('button', { name: 'Simular Pago Exitoso' }));
 
-    expect(getPedidos()).toEqual([]);
+    await waitFor(() => expect(mockFetch).not.toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/boletas'),
+        expect.objectContaining({ method: 'POST' })
+    ));
 });
 
-it('does not allow purchase with empty comuna', () => {
+it('does not allow purchase with empty comuna', async () => {
+    mockProductos();
+
     renderCheckout();
     fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Ana' } });
-    fireEvent.change(screen.getByLabelText('Calle y Número'), { target: { value: 'Av. Siempre Viva 123' } });
+    fireEvent.change(screen.getByLabelText('Calle y Número'), { target: { value: 'Calle 1' } });
     fireEvent.click(screen.getByRole('button', { name: 'Simular Pago Exitoso' }));
 
-    expect(getPedidos()).toEqual([]);
+    await waitFor(() => expect(mockFetch).not.toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/boletas'),
+        expect.objectContaining({ method: 'POST' })
+    ));
 });
 
-it('generates an order id with the expected format', async () => {
-    const { getProductos, guardarProducto } = await import('../services/mockStorage');
-    localStorage.clear();
-    localStorage.removeItem('contador_pedidos');
-    guardarProducto({ id: 'prod-1', nombre: 'Producto Test', categoria: 'Tablas', precio: 5000, stock: 10, imagen: '', oferta: false });
-
-    localStorage.setItem('carrito', JSON.stringify([
-        { id: 'prod-1', nombre: 'Producto Test', precio: 5000, imagen: '', cantidad: 1 }
-    ]));
+it('sends the cart items to the API on successful purchase', async () => {
+    mockProductos();
+    mockBoletaCreada();
 
     renderCheckout();
-
     fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Ana' } });
     fireEvent.change(screen.getByLabelText('Apellidos'), { target: { value: 'Pérez' } });
     fireEvent.change(screen.getByLabelText('Correo'), { target: { value: 'ana@correo.cl' } });
@@ -83,21 +124,21 @@ it('generates an order id with the expected format', async () => {
     fireEvent.change(screen.getByLabelText('Comuna'), { target: { value: 'Santiago' } });
     fireEvent.click(screen.getByRole('button', { name: 'Simular Pago Exitoso' }));
 
-    const id = getPedidos()[0].id;
-    expect(id).toMatch(/^pedido-\d+$/);
+    await waitFor(() => expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/boletas'),
+        expect.objectContaining({ method: 'POST' })
+    ));
+
+    const llamadasPost = mockFetch.mock.calls.filter(([url]) => String(url).includes('/api/v1/boletas'));
+    const cuerpo = JSON.parse(llamadasPost[0][1].body);
+    expect(cuerpo.items).toHaveLength(1);
+    expect(cuerpo.items[0]).toMatchObject({ productoId: 1, cantidad: 1 });
 });
 
-it('discounts stock on successful purchase', async () => {
-    const { getProductos, guardarProducto } = await import('../services/mockStorage');
-    localStorage.clear();
-    guardarProducto({ id: 'prod-stock', nombre: 'Producto Stock', categoria: 'Tablas', precio: 5000, stock: 10, imagen: '', oferta: false });
-
-    localStorage.setItem('carrito', JSON.stringify([
-        { id: 'prod-stock', nombre: 'Producto Stock', precio: 5000, imagen: '', cantidad: 3 }
-    ]));
+it('shows error when stock is insufficient', async () => {
+    mockProductos([{ id: 1, nombre: 'Tabla', precio: 1000, stock: 0, imagen: '', categoria: 'Tablas', oferta: false }]);
 
     renderCheckout();
-
     fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Ana' } });
     fireEvent.change(screen.getByLabelText('Apellidos'), { target: { value: 'Pérez' } });
     fireEvent.change(screen.getByLabelText('Correo'), { target: { value: 'ana@correo.cl' } });
@@ -105,30 +146,9 @@ it('discounts stock on successful purchase', async () => {
     fireEvent.change(screen.getByLabelText('Comuna'), { target: { value: 'Santiago' } });
     fireEvent.click(screen.getByRole('button', { name: 'Simular Pago Exitoso' }));
 
-    const productos = getProductos();
-    const producto = productos.find(p => p.id === 'prod-stock');
-    expect(producto.stock).toBe(7);
-});
-
-it('does not discount stock on failed purchase', async () => {
-    const { getProductos, guardarProducto } = await import('../services/mockStorage');
-    localStorage.clear();
-    guardarProducto({ id: 'prod-stock-2', nombre: 'Producto Stock 2', categoria: 'Tablas', precio: 5000, stock: 10, imagen: '', oferta: false });
-
-    localStorage.setItem('carrito', JSON.stringify([
-        { id: 'prod-stock-2', nombre: 'Producto Stock 2', precio: 5000, imagen: '', cantidad: 3 }
-    ]));
-
-    renderCheckout();
-
-    fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Ana' } });
-    fireEvent.change(screen.getByLabelText('Apellidos'), { target: { value: 'Pérez' } });
-    fireEvent.change(screen.getByLabelText('Correo'), { target: { value: 'ana@correo.cl' } });
-    fireEvent.change(screen.getByLabelText('Calle y Número'), { target: { value: 'Calle 1' } });
-    fireEvent.change(screen.getByLabelText('Comuna'), { target: { value: 'Santiago' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Simular Pago con Error' }));
-
-    const productos = getProductos();
-    const producto = productos.find(p => p.id === 'prod-stock-2');
-    expect(producto.stock).toBe(10);
+    await waitFor(() => expect(screen.getByRole('alert').textContent).toMatch(/Stock insuficiente/));
+    expect(mockFetch).not.toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/boletas'),
+        expect.objectContaining({ method: 'POST' })
+    );
 });

@@ -1,15 +1,67 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import SidebarAdmin from '../../components/SidebarAdmin';
-import { getProductos, getPedidos, getUsuarios, getProductosCriticos } from '../../services/mockStorage';
+import { getProductos, getBoletas, getUsuarios, getProductosCriticos } from '../../services/api';
 
 const Dashboard = () => {
-    const [stats] = useState(() => ({
-        productos: getProductos().length,
-        pedidos: getPedidos().length,
-        usuarios: getUsuarios().length,
-        criticos: getProductosCriticos(5).length
-    }));
+    const [stats, setStats] = useState({ productos: 0, pedidos: 0, usuarios: 0, criticos: 0 });
+    const [cargando, setCargando] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        cargarStats();
+    }, []);
+
+    const cargarStats = async () => {
+        try {
+            setCargando(true);
+            const [productos, boletas, usuarios, criticos] = await Promise.all([
+                getProductos(),
+                getBoletas(),
+                getUsuarios(),
+                getProductosCriticos(5)
+            ]);
+            setStats({
+                productos: (productos || []).length,
+                pedidos: (boletas || []).length,
+                usuarios: (usuarios || []).length,
+                criticos: (criticos || []).length
+            });
+        } catch (err) {
+            setError('No se pudieron cargar las estadísticas.');
+            console.error(err);
+        } finally {
+            setCargando(false);
+        }
+    };
+
+    if (cargando) {
+        return (
+            <div className="admin-body">
+                <SidebarAdmin />
+                <main className="admin-main">
+                    <header className="admin-header">
+                        <div className="header-title"><h1>Dashboard Principal</h1></div>
+                    </header>
+                    <div className="admin-container" style={{ textAlign: 'center', paddingTop: '60px' }}>Cargando estadísticas...</div>
+                </main>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="admin-body">
+                <SidebarAdmin />
+                <main className="admin-main">
+                    <header className="admin-header">
+                        <div className="header-title"><h1>Dashboard Principal</h1></div>
+                    </header>
+                    <div className="admin-container" style={{ textAlign: 'center', paddingTop: '60px', color: '#ff4a57' }}>{error}</div>
+                </main>
+            </div>
+        );
+    }
 
     return (
         <div className="admin-body">
@@ -46,7 +98,7 @@ const Dashboard = () => {
                         </div>
 
                         <div style={{ backgroundColor: '#1a1a1a', border: '1px solid #f39c12', padding: '20px', borderRadius: '8px' }}>
-                            <h3 style={{ color: '#aaa', fontSize: '0.9rem' }}>STOCK CRÍTICO (&le; 5)</h3>
+                            <h3 style={{ color: '#aaa', fontSize: '0.9rem' }}>STOCK CRÍTICO (≤ 5)</h3>
                             <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#f39c12', marginTop: '10px' }}>{stats.criticos}</p>
                             <Link to="/admin/productos/criticos" style={{ color: '#f39c12', fontSize: '0.85rem', marginTop: '10px', display: 'inline-block' }}>Revisar alertas &rarr;</Link>
                         </div>

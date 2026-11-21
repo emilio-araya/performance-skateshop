@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { getProductos } from '../../services/mockStorage';
+import { getProductoPorId } from '../../services/api';
 import { useCarrito } from '../../context/Contexto_carrito';
 
 const IMAGEN_DEFAULT = "https://images.unsplash.com/photo-1520045892732-304bc3ac5d8e?auto=format&fit=crop&w=300&q=80";
@@ -9,15 +9,36 @@ const DetalleProducto = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [producto, setProducto] = useState(null);
+    const [cargando, setCargando] = useState(true);
+    const [error, setError] = useState(null);
     const { agregarAlCarrito } = useCarrito();
 
     useEffect(() => {
-        const productos = getProductos();
-        const encontrado = productos.find(p => String(p.id) === String(id));
-        setProducto(encontrado);
+        cargarProducto();
     }, [id]);
 
-    if (!producto) {
+    const cargarProducto = async () => {
+        try {
+            setCargando(true);
+            const p = await getProductoPorId(Number(id));
+            setProducto(p || null);
+        } catch (err) {
+            setError('Producto no encontrado.');
+            console.error(err);
+        } finally {
+            setCargando(false);
+        }
+    };
+
+    if (cargando) {
+        return (
+            <div className="container" style={{ padding: '120px 0', textAlign: 'center', minHeight: '60vh' }}>
+                Cargando producto...
+            </div>
+        );
+    }
+
+    if (error || !producto) {
         return (
             <div className="container" style={{ padding: '120px 0', textAlign: 'center', minHeight: '60vh' }}>
                 <h2>Producto no encontrado</h2>
@@ -30,7 +51,6 @@ const DetalleProducto = () => {
 
     return (
         <main className="container" style={{ paddingTop: '110px', paddingBottom: '60px', minHeight: '80vh' }}>
-            {/* Botón para regresar al menú de categorías */}
             <div style={{ marginBottom: '25px' }}>
                 <Link to="/categorias" className="btn-back-link">
                     <i className="fas fa-arrow-left"></i> Volver a Categorías
@@ -40,7 +60,7 @@ const DetalleProducto = () => {
             <div className="product-detail-wrapper" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '40px', alignItems: 'center' }}>
                 <div>
                     <img 
-                        src={producto.imagen || producto.foto || IMAGEN_DEFAULT} 
+                        src={producto.imagen || IMAGEN_DEFAULT} 
                         alt={producto.nombre} 
                         style={{ width: '100%', borderRadius: '8px', border: '1px solid #2a2a2a', objectFit: 'cover', maxHeight: '420px' }}
                         onError={(e) => {

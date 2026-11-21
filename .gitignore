@@ -35,3 +35,9 @@ infra/*.tfvars
 *.key
 .env
 .env.*
+
+# Backend (Spring Boot)
+backend/target/
+backend/data/
+backend/*.log
+backend/.flattened-pom.xml

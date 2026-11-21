@@ -1,8 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import SidebarAdmin from '../../components/SidebarAdmin';
 import Campo from '../../components/Campo';
-import { getUsuarios, guardarUsuario, eliminarUsuario } from '../../services/mockStorage';
+import { getUsuarios, crearUsuario, actualizarUsuario, eliminarUsuario } from '../../services/api';
 import '../../assets/styles/admin.css';
+
+const ROL_BACKEND = { Cliente: 'CLIENTE', Administrador: 'ADMINISTRADOR', Vendedor: 'VENDEDOR' };
+const ROL_FRONT = { CLIENTE: 'Cliente', ADMINISTRADOR: 'Administrador', VENDEDOR: 'Vendedor' };
+
+const rolBackend = (rol = '') => ROL_BACKEND[rol] || rol;
+const rolFront = (rol = '') => ROL_FRONT[rol] || rol;
 
 const FORM_INICIAL = {
     run: '',
@@ -22,13 +28,31 @@ const GestionUsuarios = () => {
     const [mostrarForm, setMostrarForm] = useState(false);
     const [usrIndex, setUsrIndex] = useState(-1);
     const [form, setForm] = useState(FORM_INICIAL);
+    const [cargando, setCargando] = useState(true);
+    const [error, setError] = useState(null);
+
+    const cargarDatos = async () => {
+        try {
+            setCargando(true);
+            const lista = await getUsuarios();
+            setUsuarios((lista || []).map(u => ({
+                ...u,
+                rol: rolFront(u.rol)
+            })));
+        } catch (err) {
+            setError('No se pudieron cargar los usuarios.');
+            console.error(err);
+        } finally {
+            setCargando(false);
+        }
+    };
 
     useEffect(() => {
-        setUsuarios(getUsuarios());
+        cargarDatos();
     }, []);
 
-    const clientes = usuarios.map((u, i) => ({ ...u, originalIndex: i })).filter(u => u.rol === 'Cliente');
-    const staff = usuarios.map((u, i) => ({ ...u, originalIndex: i })).filter(u => u.rol !== 'Cliente');
+    const clientes = usuarios.filter(u => u.rol === 'Cliente');
+    const staff = usuarios.filter(u => u.rol !== 'Cliente');
 
     const handleNuevo = () => {
         setForm(FORM_INICIAL);
@@ -38,23 +62,65 @@ const GestionUsuarios = () => {
 
     const handleEditar = (usr) => {
         setForm({ ...usr, password: usr.password || '' });
-        setUsrIndex(usr.originalIndex);
+        setUsrIndex(usr.originalIndex >= 0 ? usr.originalIndex : -1);
         setMostrarForm(true);
     };
 
-    const handleEliminar = (index) => {
+    const handleEliminar = async (id) => {
         if (window.confirm("¿Seguro que deseas eliminar este usuario?")) {
-            eliminarUsuario(index);
-            setUsuarios(getUsuarios());
+            try {
+                await eliminarUsuario(id);
+                await cargarDatos();
+            } catch (err) {
+                setError('No se pudo eliminar el usuario.');
+                console.error(err);
+            }
         }
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        guardarUsuario(form, usrIndex);
-        setUsuarios(getUsuarios());
-        setMostrarForm(false);
+        const payload = {
+            ...form,
+            rol: rolBackend(form.rol)
+        };
+        try {
+            if (usrIndex >= 0) {
+                await actualizarUsuario(usrIndex, payload);
+            } else {
+                await crearUsuario(payload);
+            }
+            setMostrarForm(false);
+            await cargarDatos();
+        } catch (err) {
+            setError('No se pudo guardar el usuario.');
+            console.error(err);
+        }
     };
+
+    if (cargando) {
+        return (
+            <div className="admin-body">
+                <SidebarAdmin />
+                <main className="admin-main">
+                    <header className="admin-header"><h1>Gestión de Usuarios</h1></header>
+                    <div className="admin-container" style={{ textAlign: 'center', paddingTop: '60px' }}>Cargando usuarios...</div>
+                </main>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="admin-body">
+                <SidebarAdmin />
+                <main className="admin-main">
+                    <header className="admin-header"><h1>Gestión de Usuarios</h1></header>
+                    <div className="admin-container" style={{ textAlign: 'center', paddingTop: '60px', color: '#ff4a57' }}>{error}</div>
+                </main>
+            </div>
+        );
+    }
 
     return (
         <div className="admin-body">
@@ -95,7 +161,6 @@ const GestionUsuarios = () => {
                             </div>
 
                             <form onSubmit={handleSubmit} className="admin-form-block">
-                                {/* Bloque 1: Identificación y Acceso */}
                                 <div className="form-section-title">1. Datos de Acceso y Rol</div>
                                 <div className="form-grid-2col">
                                     <Campo 
@@ -122,7 +187,6 @@ const GestionUsuarios = () => {
                                     </div>
                                 </div>
 
-                                {/* Bloque 2: Información Personal */}
                                 <div className="form-section-title" style={{ marginTop: '20px' }}>2. Información Personal</div>
                                 <div className="form-grid-2col">
                                     <Campo 
@@ -164,7 +228,6 @@ const GestionUsuarios = () => {
                                     />
                                 </div>
 
-                                {/* Bloque 3: Ubicación */}
                                 <div className="form-section-title" style={{ marginTop: '20px' }}>3. Dirección de Contacto</div>
                                 <div className="form-grid-2col">
                                     <div className="form-field-full">
@@ -213,7 +276,7 @@ const GestionUsuarios = () => {
                                                     <button type="button" className="btn-action btn-edit" onClick={() => handleEditar(u)}>
                                                         Editar
                                                     </button>
-                                                    <button type="button" className="btn-action btn-delete" onClick={() => handleEliminar(u.originalIndex)}>
+                                                    <button type="button" className="btn-action btn-delete" onClick={() => handleEliminar(u.id)}>
                                                         Eliminar
                                                     </button>
                                                 </td>

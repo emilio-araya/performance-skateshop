@@ -1,31 +1,80 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import SidebarAdmin from '../../components/SidebarAdmin';
-import { getCategorias, guardarCategoria, eliminarCategoria } from '../../services/mockStorage';
+import { getCategorias, crearCategoria, eliminarCategoria } from '../../services/api';
 import '../../assets/styles/admin.css';
 
 const GestionCategorias = () => {
-    const [categorias, setCategorias] = useState(() => getCategorias());
+    const [categorias, setCategorias] = useState([]);
     const [nuevaCat, setNuevaCat] = useState('');
+    const [cargando, setCargando] = useState(true);
+    const [error, setError] = useState(null);
 
-    const cargarDatos = () => {
-        setCategorias(getCategorias());
+    const cargarDatos = async () => {
+        try {
+            setCargando(true);
+            const lista = await getCategorias();
+            setCategorias(lista || []);
+        } catch (err) {
+            setError('No se pudieron cargar las categorías.');
+            console.error(err);
+        } finally {
+            setCargando(false);
+        }
     };
 
-    const handleAgregar = (e) => {
+    useEffect(() => {
+        cargarDatos();
+    }, []);
+
+    const handleAgregar = async (e) => {
         e.preventDefault();
         if (nuevaCat.trim()) {
-            guardarCategoria(nuevaCat.trim());
-            cargarDatos();
-            setNuevaCat('');
+            try {
+                await crearCategoria(nuevaCat.trim());
+                await cargarDatos();
+                setNuevaCat('');
+            } catch (err) {
+                setError('No se pudo crear la categoría.');
+                console.error(err);
+            }
         }
     };
 
-    const handleEliminar = (nombre) => {
-        if (window.confirm(`¿Deseas eliminar la categoría "${nombre}"?`)) {
-            eliminarCategoria(nombre);
-            cargarDatos();
+    const handleEliminar = async (id) => {
+        if (window.confirm('¿Deseas eliminar esta categoría?')) {
+            try {
+                await eliminarCategoria(id);
+                await cargarDatos();
+            } catch (err) {
+                setError('No se pudo eliminar la categoría.');
+                console.error(err);
+            }
         }
     };
+
+    if (cargando) {
+        return (
+            <div className="admin-body">
+                <SidebarAdmin />
+                <main className="admin-main">
+                    <header className="admin-header"><h1>Gestión de Categorías</h1></header>
+                    <div className="admin-container" style={{ textAlign: 'center', paddingTop: '60px' }}>Cargando categorías...</div>
+                </main>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="admin-body">
+                <SidebarAdmin />
+                <main className="admin-main">
+                    <header className="admin-header"><h1>Gestión de Categorías</h1></header>
+                    <div className="admin-container" style={{ textAlign: 'center', paddingTop: '60px', color: '#ff4a57' }}>{error}</div>
+                </main>
+            </div>
+        );
+    }
 
     return (
         <div className="admin-body">
@@ -67,11 +116,11 @@ const GestionCategorias = () => {
                             </thead>
                             <tbody>
                                 {categorias.map((cat, idx) => (
-                                    <tr key={cat}>
+                                    <tr key={cat.id}>
                                         <td style={{ textAlign: 'center', fontWeight: 'bold', color: '#ff4a57' }}>{idx + 1}</td>
-                                        <td><strong>{cat}</strong></td>
+                                        <td><strong>{cat.nombre}</strong></td>
                                         <td style={{ textAlign: 'center' }}>
-                                            <button type="button" className="btn-action btn-delete" onClick={() => handleEliminar(cat)}>
+                                            <button type="button" className="btn-action btn-delete" onClick={() => handleEliminar(cat.id)}>
                                                 Eliminar
                                             </button>
                                         </td>

@@ -1,19 +1,45 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import SidebarAdmin from '../../components/SidebarAdmin';
-import { getProductos } from '../../services/mockStorage';
+import { getProductoPorId } from '../../services/api';
 
 const DetalleProductosAdmin = () => {
     const { id } = useParams();
     const [producto, setProducto] = useState(null);
+    const [cargando, setCargando] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
-        const productos = getProductos();
-        const encontrado = productos.find(p => p.id === id);
-        setProducto(encontrado);
+        cargarProducto();
     }, [id]);
 
-    if (!producto) {
+    const cargarProducto = async () => {
+        try {
+            setCargando(true);
+            const p = await getProductoPorId(Number(id));
+            setProducto(p || null);
+        } catch (err) {
+            setError('Producto no encontrado.');
+            console.error(err);
+        } finally {
+            setCargando(false);
+        }
+    };
+
+    if (cargando) {
+        return (
+            <div className="admin-body">
+                <SidebarAdmin />
+                <main className="admin-main">
+                    <div className="admin-container">
+                        <h2>Cargando producto...</h2>
+                    </div>
+                </main>
+            </div>
+        );
+    }
+
+    if (error || !producto) {
         return (
             <div className="admin-body">
                 <SidebarAdmin />
@@ -26,6 +52,8 @@ const DetalleProductosAdmin = () => {
             </div>
         );
     }
+
+    const catNombre = typeof producto.categoria === 'string' ? producto.categoria : (producto.categoria?.nombre || '-');
 
     return (
         <div className="admin-body">
@@ -43,7 +71,7 @@ const DetalleProductosAdmin = () => {
                         <div>
                             <h3>{producto.nombre}</h3>
                             <p style={{ margin: '10px 0', color: '#aaa' }}>ID Único: <code>{producto.id}</code></p>
-                            <p style={{ margin: '10px 0', color: '#aaa' }}>Categoría: <strong>{producto.categoria}</strong></p>
+                            <p style={{ margin: '10px 0', color: '#aaa' }}>Categoría: <strong>{catNombre}</strong></p>
                             <p style={{ margin: '10px 0', color: '#aaa' }}>Precio Venta: <strong>${Number(producto.precio).toLocaleString("es-CL")}</strong></p>
                             <p style={{ margin: '10px 0', color: '#aaa' }}>Stock en Bodega: <strong style={{ color: producto.stock <= 5 ? '#ff4a57' : '#25d366' }}>{producto.stock} unidades</strong></p>
                             
