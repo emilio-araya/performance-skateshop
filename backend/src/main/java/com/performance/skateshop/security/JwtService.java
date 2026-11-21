@@ -6,6 +6,8 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -16,13 +18,22 @@ import java.util.Date;
 @Service
 public class JwtService {
 
+    private static final Logger log = LoggerFactory.getLogger(JwtService.class);
+
     private final SecretKey key;
     private final long expirationMillis;
 
-    public JwtService(@Value("${app.jwt.secret}") String secret,
+    public JwtService(@Value("${app.jwt.secret:}") String secret,
                       @Value("${app.jwt.expiration-minutes}") long expirationMinutes) {
-        // La clave debe ser base64 de al menos 32 bytes (HS256) o 48 bytes (HS384).
-        this.key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
+        if (secret == null || secret.isBlank()) {
+            // Sin secreto configurado se usa una clave efímera: nunca se commitea
+            // una clave de firma. Los tokens dejan de valer al reiniciar.
+            this.key = Jwts.SIG.HS256.key().build();
+            log.warn("JWT_SECRET no está definido: se generó una clave efímera. "
+                    + "En producción definí JWT_SECRET (base64, mínimo 32 bytes).");
+        } else {
+            this.key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
+        }
         this.expirationMillis = expirationMinutes * 60_000L;
     }
 

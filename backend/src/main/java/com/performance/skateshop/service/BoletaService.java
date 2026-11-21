@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @Transactional
@@ -58,7 +59,9 @@ public class BoletaService {
         }
 
         Boleta boleta = new Boleta();
-        boleta.setNumeroBoleta("BOL-" + System.currentTimeMillis());
+        // UUID en lugar de currentTimeMillis: dos compras en el mismo milisegundo
+        // colisionaban contra la columna unique.
+        boleta.setNumeroBoleta("BOL-" + UUID.randomUUID());
         boleta.setFecha(LocalDateTime.now());
         boleta.setClienteNombre(request.getNombre());
         boleta.setClienteEmail(request.getCorreo());
@@ -67,7 +70,8 @@ public class BoletaService {
 
         if (request.getUsuarioId() != null) {
             Usuario usuario = usuarioRepository.findById(request.getUsuarioId())
-                    .orElse(null);
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Usuario no encontrado con ID: " + request.getUsuarioId()));
             boleta.setUsuario(usuario);
         }
 
@@ -76,16 +80,20 @@ public class BoletaService {
         for (DetalleBoletaRequestDto item : request.getItems()) {
             Producto producto = null;
             if (item.getProductoId() != null) {
-                producto = productoRepository.findById(item.getProductoId()).orElse(null);
+                producto = productoRepository.findByIdForUpdate(item.getProductoId()).orElse(null);
             }
             if (producto == null && item.getProductoCodigo() != null) {
-                producto = productoRepository.findByCodigo(item.getProductoCodigo()).orElse(null);
+                producto = productoRepository.findByCodigoForUpdate(item.getProductoCodigo()).orElse(null);
             }
             if (producto == null) {
                 throw new IllegalArgumentException("Producto no encontrado: ID " + item.getProductoId() + " o Código " + item.getProductoCodigo());
             }
 
-            int cantidad = (item.getCantidad() != null && item.getCantidad() > 0) ? item.getCantidad() : 1;
+            int cantidad = (item.getCantidad() != null) ? item.getCantidad() : 1;
+            if (cantidad <= 0) {
+                throw new IllegalArgumentException(
+                        "La cantidad debe ser mayor a cero para '" + producto.getNombre() + "'.");
+            }
             if (producto.getStock() < cantidad) {
                 throw new IllegalStateException("Stock insuficiente para '" + producto.getNombre() + "'. Disponible: " + producto.getStock() + ", Solicitado: " + cantidad);
             }

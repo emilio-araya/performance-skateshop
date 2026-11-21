@@ -44,12 +44,12 @@ public class CategoriaService {
                     cat.setDescripcion(categoriaActualizada.getDescripcion());
                     return categoriaRepository.save(cat);
                 })
-                .orElseThrow(() -> new RuntimeException("Categoría no encontrada con ID: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Categoría no encontrada con ID: " + id));
     }
 
     public void eliminar(Long id) {
         if (!categoriaRepository.existsById(id)) {
-            throw new RuntimeException("Categoría no encontrada con ID: " + id);
+            throw new RecursoNoEncontradoException("Categoría no encontrada con ID: " + id);
         }
         categoriaRepository.deleteById(id);
     }

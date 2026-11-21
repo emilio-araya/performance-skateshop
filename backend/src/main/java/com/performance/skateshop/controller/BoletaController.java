@@ -7,6 +7,8 @@ import com.performance.skateshop.security.UsuarioPrincipal;
 import com.performance.skateshop.service.BoletaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -18,6 +20,8 @@ import java.util.List;
 @RequestMapping("/api/v1/boletas")
 @Tag(name = "Boletas y Ventas", description = "Endpoints para el registro de compras, emisión de boletas y control de pedidos")
 public class BoletaController {
+
+    private static final Logger log = LoggerFactory.getLogger(BoletaController.class);
 
     private final BoletaService boletaService;
 
@@ -74,7 +78,10 @@ public class BoletaController {
         } catch (IllegalArgumentException | IllegalStateException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al procesar la compra: " + e.getMessage());
+            // No se filtra el detalle interno de persistencia al cliente.
+            log.error("Error al procesar la compra", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("No se pudo procesar la compra. Intentalo nuevamente.");
         }
     }
 }

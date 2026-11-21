@@ -56,7 +56,7 @@ public class ProductoService {
     public Producto guardar(Producto producto) {
         if (producto.getCategoria() != null && producto.getCategoria().getId() != null) {
             Categoria categoria = categoriaRepository.findById(producto.getCategoria().getId())
-                    .orElseThrow(() -> new RuntimeException("Categoría no encontrada con ID: " + producto.getCategoria().getId()));
+                    .orElseThrow(() -> new RecursoNoEncontradoException("Categoría no encontrada con ID: " + producto.getCategoria().getId()));
             producto.setCategoria(categoria);
         }
         return productoRepository.save(producto);
@@ -75,17 +75,17 @@ public class ProductoService {
 
                     if (prod.getCategoria() != null && prod.getCategoria().getId() != null) {
                         Categoria cat = categoriaRepository.findById(prod.getCategoria().getId())
-                                .orElseThrow(() -> new RuntimeException("Categoría no encontrada con ID: " + prod.getCategoria().getId()));
+                                .orElseThrow(() -> new RecursoNoEncontradoException("Categoría no encontrada con ID: " + prod.getCategoria().getId()));
                         existente.setCategoria(cat);
                     }
                     return productoRepository.save(existente);
                 })
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado con ID: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Producto no encontrado con ID: " + id));
     }
 
     public void eliminar(Long id) {
         if (!productoRepository.existsById(id)) {
-            throw new RuntimeException("Producto no encontrado con ID: " + id);
+            throw new RecursoNoEncontradoException("Producto no encontrado con ID: " + id);
         }
         productoRepository.deleteById(id);
     }
