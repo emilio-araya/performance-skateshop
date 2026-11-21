@@ -1,28 +1,38 @@
 # Performance Skateshop
 
-Tienda de skateboarding hecha como SPA con React 19 y Vite. Incluye catálogo, carrito, checkout, autenticación y un panel de administración. No tiene backend: los datos se guardan en el `localStorage` del navegador.
+Tienda de skateboarding: **frontend** (React 19 + Vite 8) + **backend** (Spring Boot 3.3.5) con **autenticación JWT** (HS256, BCrypt, matriz de roles ADMINISTRADOR / VENDEDOR / CLIENTE). El frontend consume la API REST vía `fetch` nativo (`src/services/api.js`).
 
 ## Stack
 
-- React 19 + React Router 7
+- React 19 + React Router 7 (frontend)
 - Vite 8
-- Vitest + Testing Library
+- Vitest + Testing Library (frontend)
 - Oxlint
+- Spring Boot 3.3.5 + Spring Security + JWT (JJWT 0.12.6) + BCrypt (backend)
+- H2 en memoria (desarrollo) — MySQL/MariaDB para producción (bloque alternativo en `application.properties`)
 - Terraform 1.6+ para el despliegue en AWS (carpeta `infra/`)
 
 ## Requisitos
 
-- Node.js 20 o superior
-- npm
+- Node.js 20 o superior, npm
+- Java 17 + Maven 3 (backend)
 
 ## Puesta en marcha
 
+### Backend
+
 ```bash
-npm install
-npm run dev
+cd backend
+mvn test              # suite de pruebas (H2 en memoria)
+mvn spring-boot:run   # servidor en http://localhost:8080
 ```
 
-La aplicación queda en `http://localhost:5173`.
+### Frontend
+
+```bash
+npm install
+npm run dev           # http://localhost:5173
+```
 
 ```bash
 npm run build     # compila a dist/
@@ -46,8 +56,14 @@ En Node 22 o anterior no hace falta.
 | Rol | Correo | Contraseña |
 | --- | --- | --- |
 | Administrador | `admin@performance.cl` | `admin123` |
+| Vendedor | `vendedor@performance.cl` | `vendedor123` |
+| Cliente | `cliente@correo.cl` | `cliente123` |
 
-El cliente se crea desde la pestaña **Crear Cuenta**. Las credenciales del administrador son datos de demostración incluidos en el código (`src/services/mockStorage.js`), visibles también en la pantalla de login.
+- **Administrador:** acceso total (catálogo, usuarios, ventas, pedidos).
+- **Vendedor:** solo vista de productos y pedidos (sin gestión de usuarios).
+- **Cliente:** tienda, compra a su propio nombre y consulta de sus boletas.
+
+Los credenciales demo están en `backend/src/main/resources/data.sql` (passwords hasheadas con BCrypt).
 
 ## Rutas
 
@@ -70,15 +86,19 @@ src/
 ├── components/     Componentes reutilizables (Campo, ImagenProducto, layouts, rutas protegidas)
 ├── context/        Contexto de sesión y de carrito
 ├── Pages/          Vistas de tienda y de administración
-├── services/       Datos de demostración, autenticación y utilidades de almacenamiento
+├── services/       api.js (fetch REST + token JWT), auth.js (login/registro)
 ├── tests/          Pruebas con Vitest
 └── assets/styles/  Hojas de estilo por área
+backend/
+├── src/main/java/...     Servicios Spring (Security, JWT, controladores, modelos)
+└── src/main/resources/   data.sql (demo BCrypt), application.properties
 infra/              Terraform: VPC, subred pública, security group, EC2 y nginx
 ```
 
 ## Pruebas
 
-Las pruebas cubren el flujo de sesión, el checkout, el panel de administración, la tarjeta de producto y los componentes compartidos. Corren con Vitest sobre jsdom.
+- Frontend: Vitest sobre jsdom (`npm test`) — session, checkout, admin, productos
+- Backend: suite de integración de Maven (`mvn test`) — JWT, matriz de roles, BCrypt, boletas
 
 ## Despliegue en AWS
 
@@ -100,9 +120,10 @@ El estado de Terraform, `terraform.tfvars` y las llaves privadas están excluido
 
 ## Limitaciones conocidas
 
-- **Sin backend ni base de datos.** Los productos, usuarios y pedidos viven en el `localStorage`, así que cada navegador tiene su propia copia y los cambios del administrador no se comparten entre dispositivos.
-- **La autenticación no es segura.** Las credenciales se validan en el cliente y la sesión se guarda en `localStorage`. En producción requiere autenticación en el servidor (por ejemplo Spring Security con JWT).
-- **El despliegue es HTTP,** sin TLS. Sin dominio ni certificado no hay cifrado del tráfico.
+- **Backend local HTTP.** El backend corre en `http://localhost:8080`; el frontend en `http://localhost:5173`. Sin TLS se despliega la app de forma desacoplada.
+- **Carrito solo para la sesión.** El carrito se persiste en `localStorage`; si hay reload conectado a la API de respaldar datos de negocio persistentemente.
+- **JWT_SECRET.** Sin `JWT_SECRET` asignado, la app genera una clave efímera: los tokens dejan de valer al reiniciar. Invierte `JWT_SECRET` (base64, mínimo 32 bytes) en producción.
+- **El despliegue es HTTP.** Sin dominio ni certificado no hay cifrado del tráfico.
 - **Faltan imágenes en `public/img/`.** La interfaz usa un reemplazo genérico cuando no encuentra la imagen.
 
-Estas limitaciones son deliberadas para el alcance del trabajo: la aplicación demuestra el frontend y el despliegue de infraestructura, no un sistema productivo.
+Estas limitaciones son deliberadas para el alcance del trabajo: la aplicación demuestra frontend + backend + infraestructura, no un sistema productivo en producción.
