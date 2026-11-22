@@ -17,12 +17,12 @@ const Navbar = () => {
             : (Array.isArray(carrito) ? carrito.reduce((acc, prod) => acc + (prod.cantidad || prod.quantity || 1), 0) : 0);
 
     // Prioriza el usuario del contexto de React para actualización inmediata
-    const usuarioLogueado = usuario || JSON.parse(localStorage.getItem('usuario_logueado'));
+    const usuarioLogueado = usuario || (typeof localStorage !== 'undefined' && JSON.parse(localStorage.getItem('usuario_logueado') || 'null'));
 
     const handleLogout = () => {
         if (cerrarSesion) {
             cerrarSesion();
-        } else {
+        } else if (typeof localStorage !== 'undefined') {
             localStorage.removeItem('usuario_logueado');
         }
         setMenuAbierto(false);
@@ -30,6 +30,9 @@ const Navbar = () => {
     };
 
     const cerrarMenu = () => setMenuAbierto(false);
+
+    const rol = usuarioLogueado?.rol?.toUpperCase?.() || usuarioLogueado?.rol;
+    const puedeVerAdmin = rol === 'ADMINISTRADOR' || rol === 'ADMIN' || rol === 'Administrador' || rol === 'VENDEDOR' || rol === 'Vendedor';
 
     return (
         <header className="navbar-wrapper">
@@ -71,7 +74,7 @@ const Navbar = () => {
                                     <button type="button" className="user-greeting btn-user-greeting">
                                         Hola, {usuarioLogueado.nombre}
                                     </button>
-                                    {usuarioLogueado.rol === 'Administrador' && (
+                                    {puedeVerAdmin && (
                                         <Link to="/admin" className="btn-admin-nav" onClick={cerrarMenu}>
                                             Panel Admin
                                         </Link>

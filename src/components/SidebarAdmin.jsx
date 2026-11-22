@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
 import { NavLink, Link } from 'react-router-dom';
+import { useSesion } from '../context/Contexto_sesion';
 
 const SidebarAdmin = () => {
     const [menuAbierto, setMenuAbierto] = useState(false);
+    const { usuario } = useSesion();
+    const rol = usuario?.rol?.toUpperCase?.() || usuario?.rol;
+    const esAdmin = rol === 'ADMINISTRADOR' || rol === 'ADMIN' || rol === 'Administrador';
 
     const cerrarMenu = () => setMenuAbierto(false);
 
@@ -27,7 +31,7 @@ const SidebarAdmin = () => {
             <aside className={`sidebar ${menuAbierto ? 'mobile-open' : ''}`}>
                 <div className="sidebar-header">
                     <h2>PERFORMANCE</h2>
-                    <span className="badge-admin">Admin Panel</span>
+                    <span className="badge-admin">{esAdmin ? 'Admin Panel' : 'Panel Vendedor'}</span>
                 </div>
 
                 <nav className="sidebar-nav">
@@ -52,11 +56,13 @@ const SidebarAdmin = () => {
                                 <i className="fa-solid fa-tags"></i> Categorías
                             </NavLink>
                         </li>
-                        <li>
-                            <NavLink to="/admin/usuarios" className={({ isActive }) => isActive ? "nav-btn active" : "nav-btn"} onClick={cerrarMenu}>
-                                <i className="fa-solid fa-users"></i> Usuarios
-                            </NavLink>
-                        </li>
+                        {esAdmin && (
+                            <li>
+                                <NavLink to="/admin/usuarios" className={({ isActive }) => isActive ? "nav-btn active" : "nav-btn"} onClick={cerrarMenu}>
+                                    <i className="fa-solid fa-users"></i> Usuarios
+                                </NavLink>
+                            </li>
+                        )}
                         <li>
                             <NavLink to="/admin/pedidos" className={({ isActive }) => isActive ? "nav-btn active" : "nav-btn"} onClick={cerrarMenu}>
                                 <i className="fa-solid fa-receipt"></i> Pedidos

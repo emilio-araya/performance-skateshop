@@ -10,7 +10,8 @@ const RutaAdmin = () => {
     if (!usuario) {
         return <Navigate to="/login" state={{ from: location }} replace />;
     }
-    if (usuario.rol !== 'Administrador') {
+    const rol = usuario.rol?.toUpperCase?.() || usuario.rol;
+    if (rol !== 'ADMINISTRADOR' && rol !== 'ADMIN' && rol !== 'VENDEDOR' && rol !== 'Administrador') {
         return <Navigate to="/" replace />;
     }
     return <Outlet />;

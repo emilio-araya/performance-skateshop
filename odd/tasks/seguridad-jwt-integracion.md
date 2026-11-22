@@ -48,9 +48,9 @@ Aceptación: el rol que decide la UI es el que viene en el JWT, no un valor edit
 | T2 | `JwtService`, `JwtAuthenticationFilter`, `SecurityConfig`, `UserDetailsService`, `PasswordEncoder` | S1, S2 | inline | hecho | 199b599 |
 | T3 | `AuthController` + DTOs (`login`, `register`) + `/boletas/mias` | S1, S2 | inline | hecho | 199b599 |
 | T4 | Tests backend: login ok/401, matriz de roles, JWT inválido/vencido | S1, S2, S3 | inline | hecho | 199b599 |
-| T5 | `src/services/api.js` (fetch + token) y sesión contra JWT | S4 | delegado | hecho | — |
+| T5 | `src/services/api.js` (fetch + token) y sesión contra JWT | S4 | inline | hecho | 1afdf4b |
 | T6 | Conectar todas las páginas frontend a api.js (tienda + admin + carrito) | S4 | inline | hecho | a51c07e |
-| T7 | UI por rol + tests frontend con fetch mockeado | S5 | delegado | hecho | — |
+| T7 | UI por rol + tests frontend con fetch mockeado | S5 | inline | hecho | 1afdf4b |
 
 ## Log
 
