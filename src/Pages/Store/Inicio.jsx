@@ -28,7 +28,8 @@ const Inicio = () => {
 
     const productosFiltrados = productos.filter(p => {
         if (categoriaSel === "todo") return true;
-        return p.categoria.toLowerCase().trim() === categoriaSel.toLowerCase().trim();
+        const catNombre = typeof p.categoria === 'string' ? p.categoria : (p.categoria?.nombre || '');
+        return catNombre.toLowerCase().trim() === categoriaSel.toLowerCase().trim();
     });
 
     if (cargando) {

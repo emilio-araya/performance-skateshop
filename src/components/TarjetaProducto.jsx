@@ -5,13 +5,16 @@ import ImagenProducto from './ImagenProducto';
 
 const TarjetaProducto = ({ producto }) => {
     const { agregarAlCarrito } = useCarrito();
+    const categoriaNombre = typeof producto.categoria === 'string'
+        ? producto.categoria
+        : (producto.categoria?.nombre || '');
 
     return (
         <div className="product-card">
             {producto.oferta && <span className="product-badge">Oferta</span>}
             <ImagenProducto src={producto.imagen} alt={producto.nombre} className="product-img" />
             <div className="product-info">
-                <div className="product-cat">{producto.categoria}</div>
+                <div className="product-cat">{categoriaNombre}</div>
                 <h3 className="product-title">
                     <Link to={`/producto/${producto.id}`}>{producto.nombre}</Link>
                 </h3>

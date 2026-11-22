@@ -70,7 +70,9 @@ const DetalleProducto = () => {
                     />
                 </div>
                 <div>
-                    <span className="badge-admin" style={{ marginBottom: '12px', display: 'inline-block' }}>{producto.categoria}</span>
+                    <span className="badge-admin" style={{ marginBottom: '12px', display: 'inline-block' }}>
+                        {typeof producto.categoria === 'string' ? producto.categoria : (producto.categoria?.nombre || '')}
+                    </span>
                     <h1 style={{ fontSize: '2rem', marginBottom: '15px', color: '#ffffff' }}>{producto.nombre}</h1>
                     <h2 style={{ color: 'var(--accent-color)', fontSize: '1.8rem', marginBottom: '20px' }}>
                         ${Number(producto.precio || 0).toLocaleString("es-CL")}
