@@ -41,3 +41,8 @@ backend/target/
 backend/data/
 backend/*.log
 backend/.flattened-pom.xml
+
+# Agent and tool artifacts
+.agents/
+.atl/
+

@@ -12,6 +12,7 @@ const CAMPOS_LOGIN = [
 ];
 
 const CAMPOS_REGISTRO = [
+    { name: 'run', label: 'RUN (Sin puntos ni guión)', placeholder: '123456789' },
     { name: 'nombre', label: 'Nombre', placeholder: 'Tu nombre', autoComplete: 'given-name' },
     { name: 'apellidos', label: 'Apellidos', placeholder: 'Tus apellidos', autoComplete: 'family-name' },
     { name: 'email', label: 'Correo Electrónico', type: 'email', placeholder: 'ejemplo@correo.cl', autoComplete: 'email' },
@@ -45,30 +46,35 @@ const Login = () => {
         setError('');
     };
 
-    const irSegunRol = (usuario) => {
-        navigate(usuario.rol === 'Administrador' ? '/admin' : '/');
-    };
-
-    const handleLogin = (e) => {
-        e.preventDefault();
-        setError('');
-        const { ok, usuario, error } = iniciarSesion(loginForm.email, loginForm.password);
-        if (ok) {
-            irSegunRol(usuario);
+    const irSegunRol = (usr) => {
+        const rol = usr?.rol?.toUpperCase?.() || usr?.rol;
+        if (rol === 'ADMINISTRADOR' || rol === 'ADMIN' || rol === 'VENDEDOR') {
+            navigate('/admin');
         } else {
-            setError(error);
+            navigate('/');
         }
     };
 
-    const handleRegistro = (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
         setError('');
-        const { ok, usuario, error } = registrarse(regForm);
-        if (!ok) {
-            setError(error);
+        const res = await iniciarSesion(loginForm.email, loginForm.password);
+        if (res.ok) {
+            irSegunRol(res.usuario);
+        } else {
+            setError(res.error);
+        }
+    };
+
+    const handleRegistro = async (e) => {
+        e.preventDefault();
+        setError('');
+        const res = await registrarse(regForm);
+        if (!res.ok) {
+            setError(res.error);
             return;
         }
-        irSegunRol(usuario);
+        irSegunRol(res.usuario);
     };
 
     return (
@@ -98,18 +104,18 @@ const Login = () => {
                         <Formulario
                             campos={CAMPOS_LOGIN}
                             valores={loginForm}
-                            onChange={(e) => setLoginForm(prev => ({ ...prev, [e.target.name]: e.target.value }))}
+                            onChange={(e) => setLoginForm({ ...loginForm, [e.target.name]: e.target.value })}
                             onSubmit={handleLogin}
-                            gap="15px"
+                            gap="20px"
                             textoBoton="Ingresar"
                         />
                     ) : (
                         <Formulario
                             campos={CAMPOS_REGISTRO}
                             valores={regForm}
-                            onChange={(e) => setRegForm(prev => ({ ...prev, [e.target.name]: e.target.value }))}
+                            onChange={(e) => setRegForm({ ...regForm, [e.target.name]: e.target.value })}
                             onSubmit={handleRegistro}
-                            gap="12px"
+                            gap="15px"
                             textoBoton="Registrarme"
                         />
                     )}

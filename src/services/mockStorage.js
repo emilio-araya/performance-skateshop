@@ -1,29 +1,3 @@
-// --- POLYFILL LOCALSTORAGE PARA VITEST & NODE 22 ---
-(function initLocalStoragePolyfill() {
-    if (typeof globalThis !== 'undefined') {
-        try {
-            if (!globalThis.localStorage || typeof globalThis.localStorage.clear !== 'function' || typeof globalThis.localStorage.getItem !== 'function') {
-                const store = new Map();
-                const mockLS = {
-                    getItem: (key) => store.get(String(key)) ?? null,
-                    setItem: (key, val) => store.set(String(key), String(val)),
-                    removeItem: (key) => store.delete(String(key)),
-                    clear: () => store.clear(),
-                    key: (i) => Array.from(store.keys())[i] ?? null,
-                    get length() { return store.size; }
-                };
-                Object.defineProperty(globalThis, 'localStorage', {
-                    value: mockLS,
-                    writable: true,
-                    configurable: true
-                });
-            }
-        } catch (e) {
-            // Ignorar en entornos que restrinjan la propiedad
-        }
-    }
-})();
-
 // Datos iniciales demo
 const PRODUCTOS_DEMO = [
     {
