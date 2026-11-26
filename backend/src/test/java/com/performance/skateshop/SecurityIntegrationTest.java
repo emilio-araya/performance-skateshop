@@ -327,4 +327,56 @@ class SecurityIntegrationTest {
         mockMvc.perform(get("/api/v1/no-existe").header("Authorization", bearer(tokenDe(ADMIN, ADMIN_PASS))))
                 .andExpect(status().isNotFound());
     }
+
+    // --- Probes de regresión aportados por la verificación independiente ---
+
+    @Test
+    void rutaInexistenteSinTokenDevuelve401() throws Exception {
+        mockMvc.perform(get("/api/v1/no-existe"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void errorDirectoNoEsPublico() throws Exception {
+        mockMvc.perform(get("/error"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void clienteNoPuedeReponerStock() throws Exception {
+        mockMvc.perform(patch("/api/v1/productos/1/reponer-stock?cantidad=2")
+                        .header("Authorization", bearer(tokenDe(CLIENTE, CLIENTE_PASS))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void vendedorNoPuedePATCHCategorias() throws Exception {
+        mockMvc.perform(patch("/api/v1/categorias/1")
+                        .header("Authorization", bearer(tokenDe(VENDEDOR, VENDEDOR_PASS))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void reponerStockCantidadNegativaDevuelve400() throws Exception {
+        mockMvc.perform(patch("/api/v1/productos/1/reponer-stock?cantidad=-5")
+                        .header("Authorization", bearer(tokenDe(ADMIN, ADMIN_PASS))))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void reponerStockSinCantidadSumaUno() throws Exception {
+        String token = tokenDe(ADMIN, ADMIN_PASS);
+        MvcResult creado = mockMvc.perform(post("/api/v1/productos")
+                        .header("Authorization", bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"codigo\":\"reponer-default-test\",\"nombre\":\"Default\",\"precio\":1000,\"stock\":7,\"categoria\":{\"id\":1}}"))
+                .andExpect(status().isCreated())
+                .andReturn();
+        long id = objectMapper.readTree(creado.getResponse().getContentAsString()).get("id").asLong();
+
+        mockMvc.perform(patch("/api/v1/productos/" + id + "/reponer-stock")
+                        .header("Authorization", bearer(token)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.stock").value(8));
+    }
 }
