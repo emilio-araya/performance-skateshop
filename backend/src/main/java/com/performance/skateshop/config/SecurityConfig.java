@@ -1,6 +1,7 @@
 package com.performance.skateshop.config;
 
 import com.performance.skateshop.security.JwtAuthenticationFilter;
+import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -43,6 +44,10 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .sessionManagement(sesion -> sesion.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // El ERROR dispatch (ej. 404 de una ruta inexistente) llega sin
+                        // contexto porque la sesión es stateless: sin esta regla, un 404
+                        // se convertía en 401.
+                        .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         // Preflight y endpoints públicos
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/v1/auth/**").permitAll()

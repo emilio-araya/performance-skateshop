@@ -321,4 +321,10 @@ class SecurityIntegrationTest {
                         .header("Authorization", bearer(tokenDe(ADMIN, ADMIN_PASS))))
                 .andExpect(status().isNotFound());
     }
+
+    @Test
+    void rutaInexistenteDevuelve404YNo401() throws Exception {
+        mockMvc.perform(get("/api/v1/no-existe").header("Authorization", bearer(tokenDe(ADMIN, ADMIN_PASS))))
+                .andExpect(status().isNotFound());
+    }
 }

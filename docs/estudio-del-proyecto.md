@@ -321,9 +321,9 @@ con `/productos/stock-critico`, que no existía en el backend y el mock sí resp
 
 ## 9. Limitaciones conocidas
 
-- **Rutas inexistentes devuelven 401, no 404.** El `ERROR` dispatch vuelve a pasar por la
-  cadena de seguridad sin contexto (stateless) y cae en `anyRequest().authenticated()`.
-  No rompe la app, pero confunde al depurar.
+- **Rutas inexistentes:** con token devuelven 404; sin token, 401 (la autenticación
+  se evalúa antes de resolver el handler). Se corrigió el `ERROR` dispatch que convertía
+  todo 404 en 401.
 - **`JWT_SECRET` sin definir = clave efímera.** Los tokens mueren al reiniciar.
 - **H2 en memoria.** Todo se pierde al reiniciar; no hay migraciones (no hay Flyway/Liquibase).
 - **HTTP sin TLS** en desarrollo y en el despliegue actual.
