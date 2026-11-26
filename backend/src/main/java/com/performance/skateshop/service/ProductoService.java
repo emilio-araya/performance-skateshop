@@ -83,6 +83,17 @@ public class ProductoService {
                 .orElseThrow(() -> new RecursoNoEncontradoException("Producto no encontrado con ID: " + id));
     }
 
+    public Producto reponerStock(Long id, Integer cantidad) {
+        int unidades = (cantidad != null) ? cantidad : 1;
+        if (unidades <= 0) {
+            throw new IllegalArgumentException("La cantidad a reponer debe ser mayor a cero");
+        }
+        Producto producto = productoRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Producto no encontrado con ID: " + id));
+        producto.setStock(producto.getStock() + unidades);
+        return productoRepository.save(producto);
+    }
+
     public void eliminar(Long id) {
         if (!productoRepository.existsById(id)) {
             throw new RecursoNoEncontradoException("Producto no encontrado con ID: " + id);

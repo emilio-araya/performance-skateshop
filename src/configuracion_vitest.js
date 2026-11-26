@@ -128,7 +128,7 @@ globalThis.fetch = async (input, init = {}) => {
         if (urlStr.includes('/ofertas')) {
             return mockResponse(DEMO_PRODUCTOS.filter(p => p.oferta), 200);
         }
-        if (urlStr.includes('/stock-critico')) {
+        if (urlStr.includes('/criticos')) {
             return mockResponse(DEMO_PRODUCTOS.filter(p => p.stock <= 5), 200);
         }
         const matchId = urlStr.match(/\/productos\/(\d+)(?:\/|$)/);

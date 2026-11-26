@@ -123,7 +123,7 @@ export const getProductoPorId = async (id) => {
 };
 
 export const getProductosPorCategoria = async (cat) => {
-    return apiFetch(`/productos/categoria/${encodeURIComponent(cat)}`);
+    return apiFetch(`/productos?categoria=${encodeURIComponent(cat)}`);
 };
 
 export const getProductosOfertas = async () => {
@@ -131,7 +131,7 @@ export const getProductosOfertas = async () => {
 };
 
 export const getProductosCriticos = async (limite = 5) => {
-    return apiFetch(`/productos/stock-critico?limite=${limite}`);
+    return apiFetch(`/productos/criticos?limite=${limite}`);
 };
 
 export const crearProducto = async (producto) => {

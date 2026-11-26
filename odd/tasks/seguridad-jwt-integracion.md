@@ -114,3 +114,10 @@ Aceptación: el rol que decide la UI es el que viene en el JWT, no un valor edit
 - Tests: 37/38 frontend pasando (vitest), 18/18 backend pasando (maven).
 - Risco: `mockStorage.js` se conserva como archivo no utilizado; no se borra para no romper imports de tests legacy que aún lo referencia (categorias.spec.jsx, sesion.spec.jsx).
 
+
+**L10 — Fix de integración real front↔back (verificado contra el backend corriendo).**
+Al probar la app con el backend real (no el mock), el panel admin se rompía: `api.js` llamaba `GET /productos/stock-critico?limite=` (inexistente) y `PATCH /productos/{id}/reponer-stock` (inexistente), así que el `Promise.all` del Dashboard fallaba completo.
+1. `api.js`: `getProductosCriticos` ahora usa `GET /productos/criticos?limite=` (endpoint real).
+2. Backend: nuevo `PATCH /api/v1/productos/{id}/reponer-stock?cantidad=N` (`ProductoService.reponerStock` con `findByIdForUpdate` y validación `cantidad > 0`), restringido a ADMINISTRADOR en `SecurityConfig` (se agregó PATCH a la matriz).
+3. Tests nuevos: admin repone (stock 1→5), vendedor 403, cantidad 0 → 400, producto inexistente → 404. **22/22 backend, 37/37 frontend.**
+4. Hallazgo colateral: cualquier ruta inexistente devuelve 401 en vez de 404, porque el ERROR dispatch vuelve a pasar por la cadena de seguridad sin contexto (stateless). No bloquea, queda documentado.

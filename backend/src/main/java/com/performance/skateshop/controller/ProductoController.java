@@ -59,6 +59,17 @@ public class ProductoController {
         return ResponseEntity.ok(productoService.listarCriticos(limite));
     }
 
+    @PatchMapping("/{id}/reponer-stock")
+    @Operation(summary = "Reponer stock de un producto")
+    public ResponseEntity<Producto> reponerStock(@PathVariable Long id,
+                                                 @RequestParam(required = false, defaultValue = "1") Integer cantidad) {
+        try {
+            return ResponseEntity.ok(productoService.reponerStock(id, cantidad));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
     @PostMapping
     @Operation(summary = "Crear nuevo producto")
     public ResponseEntity<Producto> crear(@Valid @RequestBody Producto producto) {

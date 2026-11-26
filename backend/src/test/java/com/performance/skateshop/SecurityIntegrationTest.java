@@ -24,6 +24,7 @@ import java.util.Date;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -279,5 +280,45 @@ class SecurityIntegrationTest {
                 .andExpect(status().isForbidden());
         mockMvc.perform(delete("/api/v1/categorias/1").header("Authorization", bearer(token)))
                 .andExpect(status().isForbidden());
+    }
+
+    // --- S2: reposición de stock (PATCH admin) ---
+
+    @Test
+    void administradorReponeStock() throws Exception {
+        String token = tokenDe(ADMIN, ADMIN_PASS);
+        MvcResult creado = mockMvc.perform(post("/api/v1/productos")
+                        .header("Authorization", bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"codigo\":\"reponer-stock-test\",\"nombre\":\"Reponer Stock Test\",\"precio\":1000,\"stock\":1,\"categoria\":{\"id\":1}}"))
+                .andExpect(status().isCreated())
+                .andReturn();
+        long id = objectMapper.readTree(creado.getResponse().getContentAsString()).get("id").asLong();
+
+        mockMvc.perform(patch("/api/v1/productos/" + id + "/reponer-stock?cantidad=4")
+                        .header("Authorization", bearer(token)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.stock").value(5));
+    }
+
+    @Test
+    void vendedorNoPuedeReponerStock() throws Exception {
+        mockMvc.perform(patch("/api/v1/productos/1/reponer-stock")
+                        .header("Authorization", bearer(tokenDe(VENDEDOR, VENDEDOR_PASS))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void reponerStockConCantidadInvalidaDevuelve400() throws Exception {
+        mockMvc.perform(patch("/api/v1/productos/1/reponer-stock?cantidad=0")
+                        .header("Authorization", bearer(tokenDe(ADMIN, ADMIN_PASS))))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void reponerStockInexistenteDevuelve404() throws Exception {
+        mockMvc.perform(patch("/api/v1/productos/999999/reponer-stock")
+                        .header("Authorization", bearer(tokenDe(ADMIN, ADMIN_PASS))))
+                .andExpect(status().isNotFound());
     }
 }
